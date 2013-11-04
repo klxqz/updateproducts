@@ -1,0 +1,215 @@
+<link rel="stylesheet" href="{$wa_app_static_url}plugins/updateproducts/css/jquery.fileupload.css">
+<link rel="stylesheet" href="{$wa_app_static_url}plugins/updateproducts/css/bootstrap.min.css">
+<script src="{$wa_app_static_url}plugins/updateproducts/js/vendor/jquery.ui.widget.js"></script>
+<script src="{$wa_app_static_url}plugins/updateproducts/js/jquery.iframe-transport.js"></script>
+<script src="{$wa_app_static_url}plugins/updateproducts/js/jquery.fileupload.js"></script>
+
+{literal}
+<style>
+.test_table td{
+    border: 3px double #000;
+    padding: 0px 10px;
+}
+</style>
+<script>
+
+$(function () {
+    'use strict';
+    // Change this to the location of your server-side upload handler:
+    var url = '?plugin=updateproducts&action=upload';
+    $('.fileupload').fileupload({
+        url: url,
+        dataType: 'json',
+        done: function (e, data) {    
+            
+            if(data.result.status=='ok') {
+                $('#response').css('color','green');
+                $('#response').text(data.result.data.message);
+                $('#html').html(data.result.data.html);
+                
+            } else if(data.result.status=='fail'){
+                $('#response').css('color','red');
+                $('#response').text(data.result.errors[0][0]);
+            }
+            
+        },        
+        fail:function (e, data) {        
+                $('#response').css('color','red');
+                $('#response').html(data.jqXHR.responseText);
+        },
+        
+        progressall: function (e, data) {
+            var progress = parseInt(data.loaded / data.total * 100, 10);
+            $('#progress .progress-bar').css(
+                'width',
+                progress + '%'
+            );
+        }
+    }).prop('disabled', !$.support.fileInput)
+        .parent().addClass($.support.fileInput ? undefined : 'disabled').click(function(){
+            $('#progress .progress-bar').css('width','0%');
+            $('#response').html('');
+            $('#html').html('');
+        });
+
+
+
+});
+</script>
+{/literal}
+
+
+
+<div class="block double-padded" style="padding-bottom: 10px;">
+    <h1>Обновление товаров</h1>
+    <p>Обновление товаров по прайс-листу</p>
+
+
+<div id="s-updateproducts-form">
+    <form action="?plugin=updateproducts&action=upload" method="post" id="plugins-settings-form" enctype="multipart/form-data">
+    {$wa->csrf()}
+
+    
+    
+    <div class="field">
+        <div class="name">
+            Номер листа
+        </div>
+        <div class="value">
+            <input type="text" name="shop_updateproducts[list_num]" value="{$settings.list_num|escape}" /> 
+            <p class="hint">Порядковый номер листа в документе EXCEL</p>           
+        </div>
+        
+    </div>
+    
+    <div class="field">
+        <div class="name">
+            Номер строки, с которой начинается загрузка
+        </div>
+        <div class="value">
+            <input type="text" name="shop_updateproducts[row_num]" value="{$settings.row_num|escape}" />            
+        </div>
+    </div>
+    
+    <div class="field">
+        <div class="name">
+            Количество обрабатываемых строк
+        </div>
+        <div class="value">
+            <input type="text" name="shop_updateproducts[row_count]" value="{$settings.row_count|escape}" />            
+        </div>
+    </div>
+
+    <div class="field">
+        <div class="name">
+            Номер столбца с артикулом
+        </div>
+        <div class="value">
+            <input type="text" name="shop_updateproducts[sku]" value="{$settings.sku|escape}" />            
+        </div>
+    </div>
+    
+    <div class="field">
+        <div class="name">
+            Номер столбца с наименованием артикула
+        </div>
+        <div class="value">
+            <input type="text" name="shop_updateproducts[name]" value="{$settings.name|escape}" />            
+        </div>
+    </div>
+
+    
+    <div class="field">
+        <div class="name">
+            Номер столбца с количеством товара
+        </div>
+        <div class="value">
+            <input type="text" name="shop_updateproducts[stock]" value="{$settings.stock|escape}" />            
+        </div>
+    </div>
+    
+    <div class="field">
+        <div class="name">
+            Номер столбца с ценой товара
+        </div>
+        <div class="value">
+            <input type="text" name="shop_updateproducts[price]" value="{$settings.price|escape}" />            
+        </div>
+    </div>
+    
+    <div class="field">
+        <div class="name">
+            Номер столбца с закупочной ценой
+        </div>
+        <div class="value">
+            <input type="text" name="shop_updateproducts[purchase_price]" value="{$settings.purchase_price|escape}" />            
+        </div>
+    </div>
+    
+    <div class="field">
+        <div class="name">
+            Номер столбца с зачеркнутой ценой
+        </div>
+        <div class="value">
+            <input type="text" name="shop_updateproducts[compare_price]" value="{$settings.compare_price|escape}" />            
+        </div>
+    </div>
+    
+    <div class="field">
+        <div class="name">
+            Обновлять по
+        </div>
+        <div class="value">
+            <select name="shop_updateproducts[update_by]">
+                <option {if $settings.update_by=='sku'}selected=""{/if} value="sku">Обновлять по артикулу</option>
+                <option {if $settings.update_by=='name'}selected=""{/if} value="name">Обновлять по наименованию</option>
+            </select>           
+        </div>
+    </div>
+    
+    <div class="field">
+        <div class="name">
+            Склад
+        </div>
+        <div class="value">
+            <select name="shop_updateproducts[stock_id]">
+                <option {if $settings.stock_id=='0'}selected=""{/if}  value="0">По умолчанию</option>
+                {foreach from=$stocks item=stock}
+                <option {if $settings.stock_id==$stock.id}selected=""{/if} value="{$stock.id}">{$stock.name}</option>
+                {/foreach}
+            </select>           
+        </div>
+    </div>
+    
+    
+    <div class="field">
+        <div class="value">
+            <span id="test_button" class="btn btn-success fileinput-button">
+            <span>Тестировать</span>
+                <input class="fileupload" type="file" name="test" />
+            </span>    
+            
+            <span id="update_button" class="btn btn-success fileinput-button">
+            <span>Обновить</span>
+             <input class="fileupload" type="file" name="update" />
+            </span> 
+            <p class="hint">Внимание! В процессе обработки файлов большого объема могут возникать ошибки! </p>        
+        </div>
+    </div>
+
+    <div id="progress" class="progress" style="width: 400px;">
+        <div class="progress-bar progress-bar-success"></div>
+    </div>
+    
+    <div id="response"></div>
+    <div id="html"></div>
+
+
+
+    </form>
+    
+
+    
+
+</div>
+</div>
