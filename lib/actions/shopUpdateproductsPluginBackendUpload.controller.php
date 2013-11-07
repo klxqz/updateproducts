@@ -78,9 +78,12 @@ class shopUpdateproductsPluginBackendUploadController extends waJsonController {
                 $to = min(10,$list['numRows']);
                 $tpl = wa()->getAppPath($this->test_tpl, 'shop');
                 $view = wa()->getView();
+                
+                
                 $view->assign(array('list'=>$list,'row_num'=>$row_num,'columns'=>$columns,'to'=>$to,'update_by'=>$update_by));
-        		$html = $view->fetch($tpl);
+        	$html = $view->fetch($tpl);
                 $this->response['html'] = $html;
+                //print_r($list);
             }
             
             if($update) {

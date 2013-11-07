@@ -12,7 +12,7 @@
 {for $i=$row_num to $to}
 <tr>
 {foreach from=$columns key=key item=column}
-<td {if $key==$update_by}style="border-color:red;"{/if}>{$list.cells[$i][$column.num]}</td>
+<td {if $key==$update_by}style="border-color:red;"{/if}>{if isset($list.cells[$i][$column.num])}{$list.cells[$i][$column.num]}{/if}</td>
 {/foreach}
 </tr>
 {/for}
