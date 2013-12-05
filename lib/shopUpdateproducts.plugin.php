@@ -44,9 +44,10 @@ class shopUpdateproductsPlugin extends shopPlugin {
 
                 $product = new shopProduct($sku['product_id']);
                 $product_model = new shopProductModel();
-
                 $data = $product_model->getById($sku['product_id']);
-                $data['skus'][$sku_id] = $update;
+                $data['skus'] = $model_sku->getDataByProductId($sku['product_id'], true);
+                $data['skus'] = $this->prepareSkus($data['skus']);
+                $data['skus'][$sku_id] = array_merge($data['skus'][$sku_id], $update);
                 $product->save($data, true);
 
                 fwrite($f, "SKU \"$update_by_name\"='$update_by_val' обновлен\r\n");
@@ -60,6 +61,19 @@ class shopUpdateproductsPlugin extends shopPlugin {
         return array('updated' => $updated, 'not_found' => $not_found, 'log_path' => $_log_path);
     }
 
+    protected function prepareSkus($skus) {
+        foreach ($skus as &$sku) {
+            if (!$sku['stock']) {
+                $sku['stock'][0] = is_null($sku['count']) ? '' : $sku['count'];
+            } else {
+                foreach ($sku['stock'] as &$stock) {
+                    $stock = is_null($stock) ? '' : $stock;
+                }
+            }
+        }
+        return $skus;
+    }
+
     protected function getStocks($sku_id) {
         $stocks = array();
         $product_stocks = new shopProductStocksModel();
@@ -67,7 +81,7 @@ class shopUpdateproductsPlugin extends shopPlugin {
 
         if (isset($return[$sku_id])) {
             foreach ($return[$sku_id] as $stock_id => $stock) {
-                $stocks[$stock_id] = $stock['count'];
+                $stocks[$stock_id] = is_null($stock['count']) ? '' : $stock['count'];
             }
         }
 
