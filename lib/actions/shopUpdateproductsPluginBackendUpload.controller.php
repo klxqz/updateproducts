@@ -40,6 +40,7 @@ class shopUpdateproductsPluginBackendUploadController extends waJsonController {
             $row_num = intval($shop_updateproducts['row_num']) > 0 ? intval($shop_updateproducts['row_num']) : 1;
             $row_count = intval($shop_updateproducts['row_count']);
             $update_by = $shop_updateproducts['update_by'];
+            $set_product_status = $shop_updateproducts['set_product_status'];
             $stock_id = $shop_updateproducts['stock_id'];
 
 
@@ -88,7 +89,7 @@ class shopUpdateproductsPluginBackendUploadController extends waJsonController {
             if ($update) {
 
                 $plugin = wa()->getPlugin('updateproducts');
-                $result = $plugin->updateProducts($list, $columns, $update_by, $row_num, $row_count, $stock_id);
+                $result = $plugin->updateProducts($list, $columns, $update_by, $row_num, $row_count, $stock_id, $set_product_status);
 
                 $tpl = wa()->getAppPath($this->update_tpl, 'shop');
                 $view = wa()->getView();

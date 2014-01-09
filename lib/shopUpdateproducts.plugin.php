@@ -2,7 +2,7 @@
 
 class shopUpdateproductsPlugin extends shopPlugin {
 
-    public function updateProducts(&$list, $columns, $update_by, $row_num, $row_count = null, $stock_id = 0) {
+    public function updateProducts(&$list, $columns, $update_by, $row_num, $row_count = null, $stock_id = 0, $set_product_status = 0) {
 
         $_log_path = '/plugins/updateproducts/log.txt';
         $log_path = wa()->getDataPath($_log_path, 'shop');
@@ -13,6 +13,12 @@ class shopUpdateproductsPlugin extends shopPlugin {
         }
 
         $model_sku = new shopProductSkusModel();
+
+        if ($set_product_status) {
+            $sql = "UPDATE `shop_product` SET `status` = 0";
+            $model_sku->query($sql);
+        }
+
         $update_by_j = $columns[$update_by]['num'];
         $update_by_name = $columns[$update_by]['name'];
         unset($columns[$update_by]);
@@ -48,6 +54,9 @@ class shopUpdateproductsPlugin extends shopPlugin {
                 $data['skus'] = $model_sku->getDataByProductId($sku['product_id'], true);
                 $data['skus'] = $this->prepareSkus($data['skus']);
                 $data['skus'][$sku_id] = array_merge($data['skus'][$sku_id], $update);
+                if ($set_product_status) {
+                    $data['status'] = $this->inStock($data['skus']) ? 1 : 0;
+                }
                 $product->save($data, true);
 
                 fwrite($f, "SKU \"$update_by_name\"='$update_by_val' обновлен\r\n");
@@ -72,6 +81,19 @@ class shopUpdateproductsPlugin extends shopPlugin {
             }
         }
         return $skus;
+    }
+
+    protected function inStock($skus) {
+        $instock = false;
+        foreach ($skus as &$sku) {
+            foreach ($sku['stock'] as &$stock) {
+                if(intval($stock)>0) {
+                    $instock = true;
+                    break;
+                }
+            }
+        }
+        return $instock;
     }
 
     protected function getStocks($sku_id) {

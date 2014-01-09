@@ -180,6 +180,19 @@ $(function () {
         </div>
     </div>
     
+    <div class="field">
+        <div class="name">
+            Скрывать товары
+        </div>
+        <div class="value">
+            <select name="shop_updateproducts[set_product_status]">
+                <option {if $settings.set_product_status=='0'}selected=""{/if}  value="0">Нет</option>
+                <option {if $settings.set_product_status=='1'}selected=""{/if}  value="1">Да</option>             
+            </select>  
+            <p class="hint">При загрузке прайс-листа плагин установит для всех товаров стутус "Скрытый", а для товаров из прайс-листа с ненулевым остатком "Опубликован"</p>
+        </div>
+    </div>
+    
     
     <div class="field">
         <div class="value">
