@@ -3,7 +3,7 @@
 class shopUpdateproductsPlugin extends shopPlugin {
 
     public function updateProducts(&$list, $columns, $update_by, $row_num, $row_count = null, $stock_id = 0, $set_product_status = 0) {
-
+//print_r($update_by);
         $_log_path = '/plugins/updateproducts/log.txt';
         $log_path = wa()->getDataPath($_log_path, 'shop');
         @unlink($log_path);

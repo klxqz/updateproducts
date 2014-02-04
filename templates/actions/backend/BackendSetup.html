@@ -35,6 +35,16 @@
     .yes-template{
         display: none;
     }
+    #price-data{
+        width: auto;
+    }
+    #price-data th{
+        text-align: center;
+    }
+    #price-data th,#price-data td{
+        padding: 3px 10px;
+        
+    }
 </style>
 {/literal}
 
@@ -150,7 +160,7 @@
             for (var key in template) {
                 var val = template[key];
                 $('[name="shop_updateproducts[' + key + ']"]').val(val);
-                
+
             }
         });
         $('.delete-template').click(function() {
@@ -223,170 +233,153 @@
                 </div>
             </div>
 
-            <div class="field">
-                <div class="name">
-                    Номер столбца с артикулом
-                </div>
-                <div class="value">
-                    <input type="text" name="shop_updateproducts[sku]" value="{$settings.sku|escape}" />            
-                </div>
-            </div>
 
             <div class="field">
                 <div class="name">
-                    Номер столбца с наименованием артикула
+                    Данные из прайс листа
                 </div>
                 <div class="value">
-                    <input type="text" name="shop_updateproducts[name]" value="{$settings.name|escape}" />            
-                </div>
-            </div>
-
-            <div class="field">
-                <div class="name">
-                    Номер столбца с количеством товара
-                </div>
-                <div class="value">
-                    <input type="text" name="shop_updateproducts[stock]" value="{$settings.stock|escape}" />            
-                </div>
-            </div>
-
-            <div class="field">
-                <div class="name">
-                    Номер столбца с ценой товара
-                </div>
-                <div class="value">
-                    <input type="text" name="shop_updateproducts[price]" value="{$settings.price|escape}" />            
-                </div>
-            </div>
-
-            <div class="field">
-                <div class="name">
-                    Номер столбца с закупочной ценой
-                </div>
-                <div class="value">
-                    <input type="text" name="shop_updateproducts[purchase_price]" value="{$settings.purchase_price|escape}" />            
-                </div>
-            </div>
-
-            <div class="field">
-                <div class="name">
-                    Номер столбца с зачеркнутой ценой
-                </div>
-                <div class="value">
-                    <input type="text" name="shop_updateproducts[compare_price]" value="{$settings.compare_price|escape}" />            
-                </div>
-            </div>
-
-            <div class="field">
-                <div class="name">
-                    Тип товаров
-                </div>
-                <div class="value">
-                    {foreach $product_types as $key => $product_type}
-                    <div><i class="icon16 {$product_type.icon}"></i><input type="checkbox" name="shop_updateproducts[update_by][]" value="1" /> - {$product_type.name}</div>
-                    {/foreach}          
-                </div>
-            </div>
-
-            <div class="field">
-                <div class="name">
-                    Ключ для поиска обновляемой позиции 
-                </div>
-                <div class="value">
-                    <div><input type="checkbox" name="shop_updateproducts[update_by][sku]" value="1" /> - Артикул</div>
-                    <div><input type="checkbox" name="shop_updateproducts[update_by][name]" value="1" /> - Наименование</div>
-                    <div><b>Характеристики:</b></div>
-                    {foreach $features as $key => $feature}
-                    <div><input type="checkbox" name="shop_updateproducts[update_by][feature:{$key}]" value="1" />  - {$feature.name}({$key})</div>
-                    {/foreach}
-                    <!--
-                    <select name="shop_updateproducts[update_by]">
-                        <option {if $settings.update_by=='sku'}selected=""{/if} value="sku">Обновлять по артикулу</option>
-                        <option {if $settings.update_by=='name'}selected=""{/if} value="name">Обновлять по наименованию</option>
-                    </select>  
-                    -->
-                </div>
-            </div>
-
-            <div class="field">
-                <div class="name">
-                    Склад
-                </div>
-                <div class="value">
-                    <select name="shop_updateproducts[stock_id]">
-                        <option {if $settings.stock_id=='0'}selected=""{/if}  value="0">По умолчанию</option>
-                        {foreach from=$stocks item=stock}
-                        <option {if $settings.stock_id==$stock.id}selected=""{/if} value="{$stock.id}">{$stock.name}</option>
+                    <table id="price-data" class="zebra">
+                        <tbody><tr class="header">
+                                <th>
+                                    <b>Характеристика</b><br>название характеристики товара
+                                </th>
+                                <th>
+                                    <b>Номер столбка,</b><br>в котором содержится характеристика
+                                </th>
+                                <th>
+                                    <b>Ключ.</b><br>Поле является ключем для поиска
+                                </th>
+                            </tr>
+                        </tbody>
+                        {foreach $data_columns as $key => $column}
+                        <tr>
+                            <td>
+                               {$column}
+                            </td>
+                            <td class="align-center">
+                                <input type="text" class="short" name="shop_updateproducts[column_{$key}]" value="" />   
+                            </td>
+                            <td class="align-center">
+                                {if $column_keys[$key]}
+                                <input type="checkbox" name="shop_updateproducts[keys][sku_{$key}]" value="{$column}" />
+                                {/if}
+                            </td>
+                        </tr>
                         {/foreach}
-                    </select>           
-                </div>
-            </div>
-
-            <div class="field">
-                <div class="name">
-                    Скрывать товары
-                </div>
-                <div class="value">
-                    <select name="shop_updateproducts[set_product_status]">
-                        <option {if $settings.set_product_status=='0'}selected=""{/if}  value="0">Нет</option>
-                        <option {if $settings.set_product_status=='1'}selected=""{/if}  value="1">Да</option>             
-                    </select>  
-                    <p class="hint">При загрузке прайс-листа плагин установит для всех товаров стутус "Скрытый", а для товаров из прайс-листа с ненулевым остатком "Опубликован"</p>
-                </div>
-            </div>
-
-
-            <div class="field">
-                <div class="name">
-                    Шаблоны
-                </div>
-                <div class="value">
-                    <select class="templates-list" name="templates_list">
-                        {foreach $templates as $template_name => $data}
-                        <option value="">{$template_name}</option>
+                        {foreach $features as $key => $feature}
+                        <tr>
+                            <td>
+                               {$feature.name}({$key})
+                            </td>
+                            <td class="align-center">
+                                <input type="text" class="short" name="shop_updateproducts[column_{$key}]" value="" />   
+                            </td>
+                            <td class="align-center">
+                                <input type="checkbox" name="shop_updateproducts[keys][feature_{$key}]" value="{$feature.name|escape}({$key})" />
+                            </td>
+                        </tr>
                         {/foreach}
-                    </select>  
-                    <span><a href="#" class="delete-template"><i class="icon16 delete"></i>Удалить</a></span>
+                    </table>
 
-                    <div>
 
-                        <div >
-                            <input class="template-name" type="text" name="template_name"/>
-                        </div>
-                        <div class="template-buttons">
-                            <span class="loading-template"><i class="icon16 loading"></i>Загрузка...</span>
-                            <a href="#" class="add-template"><i class="icon16 add"></i>Добавить</a>
-                            <a href="#" class="save-template"><i class="icon16 add"></i>Сохранить</a>
-                            <a href="#" class="с-add-template"><i class="icon16 delete"></i>Отмена</a>
-                        </div>
+                </div>
+            </div>
 
+                
+
+                <div class="field">
+                    <div class="name">
+                        Тип товаров
                     </div>
-                    <p class="hint">Шаблоны настроек</p>
+                    <div class="value">
+                        {foreach $product_types as $key => $product_type}
+                        <div><i class="icon16 {$product_type.icon}"></i><input type="checkbox" name="shop_updateproducts[types][]" value="1" /> - {$product_type.name}</div>
+                        {/foreach}          
+                    </div>
                 </div>
-            </div>
 
 
-            <div class="field">
-                <div class="value">
-                    <span id="test_button" class="btn btn-success fileinput-button">
-                        <span>Тестировать</span>
-                        <input class="fileupload" type="file" name="test" />
-                    </span>    
 
-                    <span id="update_button" class="btn btn-success fileinput-button">
-                        <span>Обновить</span>
-                        <input class="fileupload" type="file" name="update" />
-                    </span> 
-                    <p class="hint">Внимание! В процессе обработки файлов большого объема могут возникать ошибки! </p>        
+                <div class="field">
+                    <div class="name">
+                        Склад
+                    </div>
+                    <div class="value">
+                        <select name="shop_updateproducts[stock_id]">
+                            <option {if $settings.stock_id=='0'}selected=""{/if}  value="0">По умолчанию</option>
+                            {foreach from=$stocks item=stock}
+                            <option {if $settings.stock_id==$stock.id}selected=""{/if} value="{$stock.id}">{$stock.name}</option>
+                            {/foreach}
+                        </select>           
+                    </div>
                 </div>
-            </div>
 
-            <div id="progress" class="progress" style="width: 400px;">
-                <div class="progress-bar progress-bar-success"></div>
-            </div>
+                <div class="field">
+                    <div class="name">
+                        Скрывать товары
+                    </div>
+                    <div class="value">
+                        <select name="shop_updateproducts[set_product_status]">
+                            <option {if $settings.set_product_status=='0'}selected=""{/if}  value="0">Нет</option>
+                            <option {if $settings.set_product_status=='1'}selected=""{/if}  value="1">Да</option>             
+                        </select>  
+                        <p class="hint">При загрузке прайс-листа плагин установит для всех товаров стутус "Скрытый", а для товаров из прайс-листа с ненулевым остатком "Опубликован"</p>
+                    </div>
+                </div>
 
-            <div id="response"></div>
-            <div id="html"></div>
+
+                <div class="field">
+                    <div class="name">
+                        Шаблоны
+                    </div>
+                    <div class="value">
+                        <select class="templates-list" name="templates_list">
+                            {foreach $templates as $template_name => $data}
+                            <option value="">{$template_name}</option>
+                            {/foreach}
+                        </select>  
+                        <span><a href="#" class="delete-template"><i class="icon16 delete"></i>Удалить</a></span>
+
+                        <div>
+
+                            <div >
+                                <input class="template-name" type="text" name="template_name"/>
+                            </div>
+                            <div class="template-buttons">
+                                <span class="loading-template"><i class="icon16 loading"></i>Загрузка...</span>
+                                <a href="#" class="add-template"><i class="icon16 add"></i>Добавить</a>
+                                <a href="#" class="save-template"><i class="icon16 add"></i>Сохранить</a>
+                                <a href="#" class="с-add-template"><i class="icon16 delete"></i>Отмена</a>
+                            </div>
+
+                        </div>
+                        <p class="hint">Шаблоны настроек</p>
+                    </div>
+                </div>
+
+
+                <div class="field">
+                    <div class="value">
+                        <span id="test_button" class="btn btn-success fileinput-button">
+                            <span>Тестировать</span>
+                            <input class="fileupload" type="file" name="test" />
+                        </span>    
+
+                        <span id="update_button" class="btn btn-success fileinput-button">
+                            <span>Обновить</span>
+                            <input class="fileupload" type="file" name="update" />
+                        </span> 
+                        <p class="hint">Внимание! В процессе обработки файлов большого объема могут возникать ошибки! </p>        
+                    </div>
+                </div>
+
+                <div id="progress" class="progress" style="width: 400px;">
+                    <div class="progress-bar progress-bar-success"></div>
+                </div>
+
+                <div id="response"></div>
+                <div id="html"></div>
 
 
 

@@ -39,22 +39,25 @@ class shopUpdateproductsPluginBackendUploadController extends waJsonController {
             $list_num = intval($shop_updateproducts['list_num']);
             $row_num = intval($shop_updateproducts['row_num']) > 0 ? intval($shop_updateproducts['row_num']) : 1;
             $row_count = intval($shop_updateproducts['row_count']);
-            $update_by = $shop_updateproducts['update_by'];
+            if (!isset($shop_updateproducts['keys'])) {
+                throw new waException('Ошибка. Укажите ключ для поиска соответствий.');
+            }
+            $keys = $shop_updateproducts['keys'];
             $set_product_status = $shop_updateproducts['set_product_status'];
             $stock_id = $shop_updateproducts['stock_id'];
 
 
             $columns = array(
-                'sku' => array('name' => 'Артикул', 'num' => 0),
-                'name' => array('name' => 'Наименование артикула', 'num' => 0),
-                'stock' => array('name' => 'Количество', 'num' => 0),
-                'price' => array('name' => 'Цена', 'num' => 0),
-                'purchase_price' => array('name' => 'Закупочная цена', 'num' => 0),
-                'compare_price' => array('name' => 'Зачеркнутая цена', 'num' => 0),
+                'sku_sku' => array('name' => 'Артикул', 'num' => 0),
+                'sku_name' => array('name' => 'Наименование артикула', 'num' => 0),
+                'sku_stock' => array('name' => 'Количество', 'num' => 0),
+                'sku_price' => array('name' => 'Цена', 'num' => 0),
+                'sku_purchase_price' => array('name' => 'Закупочная цена', 'num' => 0),
+                'sku_compare_price' => array('name' => 'Зачеркнутая цена', 'num' => 0),
             );
             foreach ($columns as $name => &$column) {
-                if (isset($shop_updateproducts[$name]) && intval($shop_updateproducts[$name]) > 0) {
-                    $column['num'] = intval($shop_updateproducts[$name]);
+                if (isset($shop_updateproducts['column_' . $name]) && intval($shop_updateproducts['column_' . $name]) > 0) {
+                    $column['num'] = intval($shop_updateproducts['column_' . $name]);
                 } else {
                     unset($columns[$name]);
                 }
@@ -62,7 +65,7 @@ class shopUpdateproductsPluginBackendUploadController extends waJsonController {
 
             $data = new Spreadsheet_Excel_Reader();
             $data->setOutputEncoding('UTF-8');
-            $data->read($file->tmp_name);
+            @$data->read($file->tmp_name);
 
             if ($list_num > 0 && isset($data->sheets[$list_num - 1])) {
                 $list = $data->sheets[$list_num - 1];
@@ -70,26 +73,21 @@ class shopUpdateproductsPluginBackendUploadController extends waJsonController {
                 throw new waException('Ошибка. Указан не верный лист в XLS.');
             }
 
-            if (!isset($columns['sku'])) {
-                throw new waException('Ошибка. Не задан столбец с артикулом.');
-            }
 
             if ($test) {
                 $to = min(10, $list['numRows']);
                 $tpl = wa()->getAppPath($this->test_tpl, 'shop');
                 $view = wa()->getView();
-
-
-                $view->assign(array('list' => $list, 'row_num' => $row_num, 'columns' => $columns, 'to' => $to, 'update_by' => $update_by));
+                $variables = array('list' => &$list, 'row_num' => $row_num, 'columns' => $columns, 'to' => $to, 'keys' => $keys);
+                $view->assign($variables);
                 $html = $view->fetch($tpl);
                 $this->response['html'] = $html;
-                //print_r($list);
             }
 
             if ($update) {
 
                 $plugin = wa()->getPlugin('updateproducts');
-                $result = $plugin->updateProducts($list, $columns, $update_by, $row_num, $row_count, $stock_id, $set_product_status);
+                $result = $plugin->updateProducts($list, $columns, $keys, $row_num, $row_count, $stock_id, $set_product_status);
 
                 $tpl = wa()->getAppPath($this->update_tpl, 'shop');
                 $view = wa()->getView();

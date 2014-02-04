@@ -5,17 +5,23 @@
 <table class="test_table">
 <tr>
 {foreach from=$columns key=key item=column}
-<td {if $key==$update_by}style="border-color:red;"{/if}>{$column.name}</td>
+<td {if isset($keys[$key]) && $keys[$key]}style="border-color:red;"{/if}>{$column.name}</td>
 {/foreach}
 </tr>
 
 {for $i=$row_num to $to}
 <tr>
 {foreach from=$columns key=key item=column}
-<td {if $key==$update_by}style="border-color:red;"{/if}>{if isset($list.cells[$i][$column.num])}{$list.cells[$i][$column.num]}{/if}</td>
+<td {if isset($keys[$key]) && $keys[$key]}style="border-color:red;"{/if}>{if isset($list.cells[$i][$column.num])}{$list.cells[$i][$column.num]}{/if}</td>
 {/foreach}
 </tr>
 {/for}
 </table>
-<p style="color: red;">Искать записи для обновления по полю: {$columns[$update_by].name}</p>
+<p style="color: red;">Искать записи для обновления по полю:</p>
+<ul>
+    {foreach $keys as $field => $name}
+    <li style="color: red;">{$name}</li>
+    {/foreach}
+</ul>
+
 {/if}

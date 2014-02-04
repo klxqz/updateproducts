@@ -3,6 +3,22 @@
 class shopUpdateproductsPluginBackendSetupAction extends waViewAction {
 
     protected $plugin_id = array('shop', 'updateproducts');
+    protected $data_columns = array(
+        'sku' => 'Артикул',
+        'name' => 'Наименование',
+        'stock' => 'Количество товара',
+        'price' => 'Цена',
+        'purchase_price' => 'Закупочная цена',
+        'compare_price' => 'Зачеркнутая цена'
+    );
+    protected $column_keys = array(
+        'sku' => 1,
+        'name' => 1,
+        'stock' => 0,
+        'price' => 0,
+        'purchase_price' => 0,
+        'compare_price' => 0
+    );
 
     public function execute() {
         $app_settings_model = new waAppSettingsModel();
@@ -11,12 +27,15 @@ class shopUpdateproductsPluginBackendSetupAction extends waViewAction {
         $stocks = $stock_model->getAll();
         $feature_model = new shopFeatureModel();
         $features = $feature_model->select('`id`,`code`, `name`,`type`')->fetchAll('code', true);
-        
+
         $type_model = new shopTypeModel();
         $product_types = $type_model->getAll($type_model->getTableId(), true);
 
         $templates = json_decode($settings['templates'], true);
 
+
+        $this->view->assign('data_columns', $this->data_columns);
+        $this->view->assign('column_keys', $this->column_keys);
         $this->view->assign('product_types', $product_types);
         $this->view->assign('templates', $templates);
         $this->view->assign('settings', $settings);
