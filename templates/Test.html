@@ -19,8 +19,8 @@
 </table>
 <p style="color: red;">Искать записи для обновления по полю:</p>
 <ul>
-    {foreach $keys as $field => $name}
-    <li style="color: red;">{$name}</li>
+    {foreach $keys as $key}
+    <li style="color: red;">{$key.name}</li>
     {/foreach}
 </ul>
 

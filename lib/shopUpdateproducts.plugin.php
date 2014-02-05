@@ -2,15 +2,22 @@
 
 class shopUpdateproductsPlugin extends shopPlugin {
 
-    public function updateProducts(&$list, $columns, $update_by, $row_num, $row_count = null, $stock_id = 0, $set_product_status = 0) {
-//print_r($update_by);
-        $_log_path = '/plugins/updateproducts/log.txt';
-        $log_path = wa()->getDataPath($_log_path, 'shop');
-        @unlink($log_path);
-        $f = @fopen($log_path, 'w+');
-        if (!$f) {
-            throw new waException('Ошибка. Создания файла ' . $log_path);
-        }
+    protected $log_path = 'shop/plugins/updateproducts.log';
+
+    protected function log($message) {
+        return waLog::log($message, $this->log_path);
+    }
+
+    public function updateProducts($params) {
+        //&$list, $columns, $update_by, $row_num, $row_count = null, $stock_id = 0, $set_product_status = 0
+        $list = $params['list'];
+        $columns = $params['columns'];
+        $keys = $params['keys'];
+        $update = $params['update'];
+        $row_num = $params['row_num'];
+        $row_count = $params['row_count'];
+        $stock_id = $params['stock_id'];
+        $set_product_status = $params['set_product_status'];
 
         $model_sku = new shopProductSkusModel();
 
@@ -19,9 +26,6 @@ class shopUpdateproductsPlugin extends shopPlugin {
             $model_sku->query($sql);
         }
 
-        $update_by_j = $columns[$update_by]['num'];
-        $update_by_name = $columns[$update_by]['name'];
-        unset($columns[$update_by]);
         $updated = 0;
         $not_found = 0;
         $to = $list['numRows'];
@@ -30,44 +34,89 @@ class shopUpdateproductsPlugin extends shopPlugin {
         }
 
         for ($i = $row_num; $i <= $to; $i++) {
+            $dataRow = $list['cells'][$i];
+            $skus = $this->getSkuByFields($dataRow, $columns, $keys);
 
-            $update_by_val = trim($list['cells'][$i][$update_by_j]);
 
-            if ($sku = $model_sku->getByField($update_by, $update_by_val)) {
 
-                $sku_id = $sku['id'];
-
-                $update = array();
-                foreach ($columns as $name => $column) {
-                    $j = $column['num'];
-                    if ($name == 'stock') {
-                        $update[$name] = $this->getStocks($sku_id);
-                        $update[$name][$stock_id] = isset($list['cells'][$i][$j]) ? $list['cells'][$i][$j] : 0;
-                    } else {
-                        $update[$name] = isset($list['cells'][$i][$j]) ? $list['cells'][$i][$j] : null;
+            if ($skus) {
+                foreach ($skus as $sku) {
+                    $sku_id = $sku['id'];
+                    $update_data = array();
+                    foreach ($update as $id => $item) {
+                        $field = $item['field'];
+                        $value = $this->getDataValue($id, $dataRow, $columns);
+                        if ($field == 'stock') {
+                            $update_data[$field] = $this->getStocks($sku_id);
+                            $update_data[$field][$stock_id] = ($value !== false ? $value : 0);
+                        } else {
+                            $update_data[$field] = ($value !== false ? $value : null);
+                        }
                     }
-                }
 
-                $product = new shopProduct($sku['product_id']);
-                $product_model = new shopProductModel();
-                $data = $product_model->getById($sku['product_id']);
-                $data['skus'] = $model_sku->getDataByProductId($sku['product_id'], true);
-                $data['skus'] = $this->prepareSkus($data['skus']);
-                $data['skus'][$sku_id] = array_merge($data['skus'][$sku_id], $update);
-                if ($set_product_status) {
-                    $data['status'] = $this->inStock($data['skus']) ? 1 : 0;
-                }
-                $product->save($data, true);
+                    $product = new shopProduct($sku['product_id']);
+                    $product_model = new shopProductModel();
+                    $data = $product_model->getById($sku['product_id']);
+                    $data['skus'] = $model_sku->getDataByProductId($sku['product_id'], true);
+                    
+                    $data['skus'] = $this->prepareSkus($data['skus']);
+                    $data['skus'][$sku_id] = array_merge($data['skus'][$sku_id], $update_data);
+                    
+                    if ($set_product_status) {
+                        $data['status'] = $this->inStock($data['skus']) ? 1 : 0;
+                    }
 
-                fwrite($f, "SKU \"$update_by_name\"='$update_by_val' обновлен\r\n");
-                $updated++;
+                    $product->save($data, true);
+                    //$this->log("SKU \"$update_by_name\"='$update_by_val' обновлен");
+                    $updated++;
+                }
             } else {
                 $not_found++;
-                fwrite($f, "SKU \"$update_by_name\"='$update_by_val' не был найден\r\n");
             }
         }
-        fclose($f);
-        return array('updated' => $updated, 'not_found' => $not_found, 'log_path' => $_log_path);
+        return array('updated' => $updated, 'not_found' => $not_found, 'log_path' => $this->log_path);
+    }
+
+    protected function getDataValue($key, $dataRow, $columns) {
+        $column = $columns[$key];
+        $num = $column['num'];
+        if (isset($dataRow[$num])) {
+            return $dataRow[$num];
+        } else {
+            return false;
+        }
+    }
+
+    protected function getSkuByFields($dataRow, $columns, $keys) {
+        $model = new waModel();
+        $feature_model = new shopFeatureModel();
+        $where = array();
+        $join = false;
+        foreach ($keys as $id => $key) {
+            if ($key['type'] == 'sku') {
+                $value = $this->getDataValue($id, $dataRow, $columns);
+                $condition = "`shop_product_skus`.`" . $key['field'] . "` = '" . $model->escape($value) . "'";
+                $where[] = $condition;
+            } elseif ($key['type'] == 'feature') {
+                $feature = $feature_model->getByField('code', $key['field']);
+                $type = explode('.', $feature['type']);
+                $table = 'shop_feature_values_' . $type[0];
+                $value = $this->getDataValue($id, $dataRow, $columns);
+                $condition = "`shop_product_features`.`feature_value_id` IN ("
+                        . "SELECT `id` FROM `" . $table . "` WHERE `value` = '" . $model->escape($value) . "'"
+                        . " AND `feature_id` = '" . $feature['id'] . "'"
+                        . ")";
+                $where[] = $condition;
+                $join = true;
+            }
+        }
+
+        $sql = "SELECT `shop_product_skus`.*
+                FROM `shop_product_skus`
+                " . ($join ? "LEFT JOIN `shop_product_features` ON `shop_product_skus`.`id` = `shop_product_features`.`sku_id`" : "") . "
+                WHERE " . implode(' AND ', $where);
+        $result = $model->query($sql)->fetchAll();
+        return $result;
     }
 
     protected function prepareSkus($skus) {
@@ -87,7 +136,7 @@ class shopUpdateproductsPlugin extends shopPlugin {
         $instock = false;
         foreach ($skus as &$sku) {
             foreach ($sku['stock'] as &$stock) {
-                if(intval($stock)>0) {
+                if (intval($stock) > 0) {
                     $instock = true;
                     break;
                 }

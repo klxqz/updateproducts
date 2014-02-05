@@ -6,6 +6,31 @@ class shopUpdateproductsPluginBackendUploadController extends waJsonController {
     protected $require_path = 'plugins/updateproducts/lib/vendors/excel_reader2.php';
     protected $test_tpl = 'plugins/updateproducts/templates/Test.html';
     protected $update_tpl = 'plugins/updateproducts/templates/Update.html';
+    protected $sku_columns = array(
+        'sku' => 'Артикул',
+        'name' => 'Наименование',
+        'stock' => 'Количество товара',
+        'price' => 'Цена',
+        'purchase_price' => 'Закупочная цена',
+        'compare_price' => 'Зачеркнутая цена',
+    );
+    protected $features;
+
+    public function __construct() {
+        $feature_model = new shopFeatureModel();
+        $this->features = $feature_model->select('`id`,`code`, `name`,`type`')->fetchAll('code', true);
+    }
+
+    protected function getColumnInfo($column) {
+
+        list($type, $field) = explode(':', $column);
+        if ($type == 'sku') {
+            $name = $this->sku_columns[$field];
+        } else {
+            $name = $this->features[$field]['name'];
+        }
+        return array('field' => $field, 'type' => $type, 'name' => $name);
+    }
 
     public function execute() {
         try {
@@ -18,16 +43,16 @@ class shopUpdateproductsPluginBackendUploadController extends waJsonController {
             $require = wa()->getAppPath($this->require_path, 'shop');
             require($require);
 
-            $test = null;
-            $update = null;
+            $test_mode = null;
+            $update_mode = null;
 
 
             if (waRequest::file('test')->uploaded()) {
                 $file = waRequest::file('test');
-                $test = true;
+                $test_mode = true;
             } elseif (waRequest::file('update')->uploaded()) {
                 $file = waRequest::file('update');
-                $update = true;
+                $update_mode = true;
             } else {
                 throw new waException('Ошибка. Файл не был загружен.');
             }
@@ -39,28 +64,33 @@ class shopUpdateproductsPluginBackendUploadController extends waJsonController {
             $list_num = intval($shop_updateproducts['list_num']);
             $row_num = intval($shop_updateproducts['row_num']) > 0 ? intval($shop_updateproducts['row_num']) : 1;
             $row_count = intval($shop_updateproducts['row_count']);
-            if (!isset($shop_updateproducts['keys'])) {
-                throw new waException('Ошибка. Укажите ключ для поиска соответствий.');
-            }
-            $keys = $shop_updateproducts['keys'];
             $set_product_status = $shop_updateproducts['set_product_status'];
             $stock_id = $shop_updateproducts['stock_id'];
 
+            $keysData = $this->parseData('keys_', $shop_updateproducts);
 
-            $columns = array(
-                'sku_sku' => array('name' => 'Артикул', 'num' => 0),
-                'sku_name' => array('name' => 'Наименование артикула', 'num' => 0),
-                'sku_stock' => array('name' => 'Количество', 'num' => 0),
-                'sku_price' => array('name' => 'Цена', 'num' => 0),
-                'sku_purchase_price' => array('name' => 'Закупочная цена', 'num' => 0),
-                'sku_compare_price' => array('name' => 'Зачеркнутая цена', 'num' => 0),
-            );
-            foreach ($columns as $name => &$column) {
-                if (isset($shop_updateproducts['column_' . $name]) && intval($shop_updateproducts['column_' . $name]) > 0) {
-                    $column['num'] = intval($shop_updateproducts['column_' . $name]);
-                } else {
-                    unset($columns[$name]);
-                }
+            if (!$keysData) {
+                throw new waException('Ошибка. Укажите ключ для поиска соответствий.');
+            }
+            $keys = array();
+            foreach ($keysData as $key => $checked) {
+                $keys[$key] = $this->getColumnInfo($key);
+            }
+            
+            $updateData = $this->parseData('update_', $shop_updateproducts);
+            if (!$updateData) {
+                throw new waException('Ошибка. Укажите поля для обновления.');
+            }
+            $update = array();
+            foreach ($updateData as $key => $checked) {
+                $update[$key] = $this->getColumnInfo($key);
+            }
+
+            $columnsData = $this->parseData('columns_', $shop_updateproducts);
+            $columns = array();
+            foreach ($columnsData as $key => $num) {
+                $columns[$key] = $this->getColumnInfo($key);
+                $columns[$key]['num'] = $num;
             }
 
             $data = new Spreadsheet_Excel_Reader();
@@ -74,21 +104,34 @@ class shopUpdateproductsPluginBackendUploadController extends waJsonController {
             }
 
 
-            if ($test) {
+            if ($test_mode) {
                 $to = min(10, $list['numRows']);
                 $tpl = wa()->getAppPath($this->test_tpl, 'shop');
                 $view = wa()->getView();
-                $variables = array('list' => &$list, 'row_num' => $row_num, 'columns' => $columns, 'to' => $to, 'keys' => $keys);
-                $view->assign($variables);
+                $params = array(
+                    'list' => &$list,
+                    'columns' => $columns,
+                    'keys' => $keys,
+                    'row_num' => $row_num,
+                    'to' => $to,
+                );
+                $view->assign($params);
                 $html = $view->fetch($tpl);
                 $this->response['html'] = $html;
-            }
-
-            if ($update) {
+            } elseif ($update_mode) {
 
                 $plugin = wa()->getPlugin('updateproducts');
-                $result = $plugin->updateProducts($list, $columns, $keys, $row_num, $row_count, $stock_id, $set_product_status);
-
+                $params = array(
+                    'list' => &$list,
+                    'columns' => $columns,
+                    'keys' => $keys,
+                    'update' => $update,
+                    'row_num' => $row_num,
+                    'row_count' => $row_count,
+                    'stock_id' => $stock_id,
+                    'set_product_status' => $set_product_status,
+                );
+                $result = $plugin->updateProducts($params);
                 $tpl = wa()->getAppPath($this->update_tpl, 'shop');
                 $view = wa()->getView();
                 $view->assign('result', $result);
@@ -101,6 +144,17 @@ class shopUpdateproductsPluginBackendUploadController extends waJsonController {
 
             $this->setError($e->getMessage());
         }
+    }
+
+    protected function parseData($prefix, $array) {
+        $result = array();
+        foreach ($array as $key => $item) {
+            if (preg_match('/' . $prefix . '(.+)/', $key, $match)) {
+                $sub = $match[1];
+                $result[$sub] = $item;
+            }
+        }
+        return $result;
     }
 
 }

@@ -4,20 +4,12 @@ class shopUpdateproductsPluginBackendSetupAction extends waViewAction {
 
     protected $plugin_id = array('shop', 'updateproducts');
     protected $data_columns = array(
-        'sku' => 'Артикул',
-        'name' => 'Наименование',
-        'stock' => 'Количество товара',
-        'price' => 'Цена',
-        'purchase_price' => 'Закупочная цена',
-        'compare_price' => 'Зачеркнутая цена'
-    );
-    protected $column_keys = array(
-        'sku' => 1,
-        'name' => 1,
-        'stock' => 0,
-        'price' => 0,
-        'purchase_price' => 0,
-        'compare_price' => 0
+        'sku:sku' => array('name' => 'Артикул', 'key' => true, 'update' => true),
+        'sku:name' => array('name' => 'Наименование', 'key' => true, 'update' => true),
+        'sku:stock' => array('name' => 'Количество товара', 'key' => false, 'update' => true),
+        'sku:price' => array('name' => 'Цена', 'key' => false, 'update' => true),
+        'sku:purchase_price' => array('name' => 'Закупочная цена', 'key' => false, 'update' => true),
+        'sku:compare_price' => array('name' => 'Зачеркнутая цена', 'key' => false, 'update' => true),
     );
 
     public function execute() {
@@ -28,6 +20,10 @@ class shopUpdateproductsPluginBackendSetupAction extends waViewAction {
         $feature_model = new shopFeatureModel();
         $features = $feature_model->select('`id`,`code`, `name`,`type`')->fetchAll('code', true);
 
+        foreach ($features as $key => $feature) {
+            $this->data_columns['feature:' . $key] = array('name' => $feature['name'] . '(' . $key . ')', 'key' => true, 'update' => false);
+        }
+
         $type_model = new shopTypeModel();
         $product_types = $type_model->getAll($type_model->getTableId(), true);
 
@@ -35,7 +31,6 @@ class shopUpdateproductsPluginBackendSetupAction extends waViewAction {
 
 
         $this->view->assign('data_columns', $this->data_columns);
-        $this->view->assign('column_keys', $this->column_keys);
         $this->view->assign('product_types', $product_types);
         $this->view->assign('templates', $templates);
         $this->view->assign('settings', $settings);

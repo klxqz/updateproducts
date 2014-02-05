@@ -242,41 +242,36 @@
                     <table id="price-data" class="zebra">
                         <tbody><tr class="header">
                                 <th>
-                                    <b>Характеристика</b><br>название характеристики товара
+                                    <b>Характеристика</b><br>Название характеристики товара
                                 </th>
                                 <th>
-                                    <b>Номер столбка,</b><br>в котором содержится характеристика
+                                    <b>Номер столбца,</b><br>в котором содержится характеристика
                                 </th>
                                 <th>
-                                    <b>Ключ.</b><br>Поле является ключем для поиска
+                                    <b>Обновление</b><br>Данная характеристика будет обновлена
+                                </th>
+                                <th>
+                                    <b>Ключ</b><br>Поле является ключем для поиска SKU-товаров
                                 </th>
                             </tr>
                         </tbody>
                         {foreach $data_columns as $key => $column}
                         <tr>
                             <td>
-                               {$column}
+                               {$column.name}
                             </td>
                             <td class="align-center">
-                                <input type="text" class="short" name="shop_updateproducts[column_{$key}]" value="" />   
+                                <input type="text" class="short" name="shop_updateproducts[columns_{$key}]" value="" />   
                             </td>
                             <td class="align-center">
-                                {if $column_keys[$key]}
-                                <input type="checkbox" name="shop_updateproducts[keys][sku_{$key}]" value="{$column}" />
+                                {if $column.update}
+                                <input type="checkbox" name="shop_updateproducts[update_{$key}]" value="1" />
                                 {/if}
                             </td>
-                        </tr>
-                        {/foreach}
-                        {foreach $features as $key => $feature}
-                        <tr>
-                            <td>
-                               {$feature.name}({$key})
-                            </td>
                             <td class="align-center">
-                                <input type="text" class="short" name="shop_updateproducts[column_{$key}]" value="" />   
-                            </td>
-                            <td class="align-center">
-                                <input type="checkbox" name="shop_updateproducts[keys][feature_{$key}]" value="{$feature.name|escape}({$key})" />
+                                {if $column.key}
+                                <input type="checkbox" name="shop_updateproducts[keys_{$key}]" value="1" />
+                                {/if}
                             </td>
                         </tr>
                         {/foreach}
