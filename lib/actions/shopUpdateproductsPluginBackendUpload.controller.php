@@ -135,7 +135,7 @@ class shopUpdateproductsPluginBackendUploadController extends waJsonController {
                     'row_count' => $row_count,
                     'stock_id' => $stock_id,
                     'set_product_status' => $set_product_status,
-                    'types' => $types,
+                    'types' => array_keys($types),
                 );
                 $result = $plugin->updateProducts($params);
                 $tpl = wa()->getAppPath($this->update_tpl, 'shop');

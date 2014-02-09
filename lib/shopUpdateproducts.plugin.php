@@ -9,7 +9,6 @@ class shopUpdateproductsPlugin extends shopPlugin {
     }
 
     public function updateProducts($params) {
-        //&$list, $columns, $update_by, $row_num, $row_count = null, $stock_id = 0, $set_product_status = 0
         $list = $params['list'];
         $columns = $params['columns'];
         $keys = $params['keys'];
@@ -18,6 +17,7 @@ class shopUpdateproductsPlugin extends shopPlugin {
         $row_count = $params['row_count'];
         $stock_id = $params['stock_id'];
         $set_product_status = $params['set_product_status'];
+        $types = $params['types'];
 
         $model_sku = new shopProductSkusModel();
 
@@ -35,7 +35,7 @@ class shopUpdateproductsPlugin extends shopPlugin {
 
         for ($i = $row_num; $i <= $to; $i++) {
             $dataRow = $list['cells'][$i];
-            $skus = $this->getSkuByFields($dataRow, $columns, $keys);
+            $skus = $this->getSkuByFields($dataRow, $columns, $keys, $types);
 
 
 
@@ -58,10 +58,10 @@ class shopUpdateproductsPlugin extends shopPlugin {
                     $product_model = new shopProductModel();
                     $data = $product_model->getById($sku['product_id']);
                     $data['skus'] = $model_sku->getDataByProductId($sku['product_id'], true);
-                    
+
                     $data['skus'] = $this->prepareSkus($data['skus']);
                     $data['skus'][$sku_id] = array_merge($data['skus'][$sku_id], $update_data);
-                    
+
                     if ($set_product_status) {
                         $data['status'] = $this->inStock($data['skus']) ? 1 : 0;
                     }
@@ -87,7 +87,7 @@ class shopUpdateproductsPlugin extends shopPlugin {
         }
     }
 
-    protected function getSkuByFields($dataRow, $columns, $keys) {
+    protected function getSkuByFields($dataRow, $columns, $keys, $types = null) {
         $model = new waModel();
         $feature_model = new shopFeatureModel();
         $where = array();
@@ -110,11 +110,12 @@ class shopUpdateproductsPlugin extends shopPlugin {
                 $join = true;
             }
         }
-
+        
         $sql = "SELECT `shop_product_skus`.*
                 FROM `shop_product_skus`
+                " . ($types ? "LEFT JOIN `shop_product` ON `shop_product_skus`.`product_id` = `shop_product`.`id`" : "") . " 
                 " . ($join ? "LEFT JOIN `shop_product_features` ON `shop_product_skus`.`id` = `shop_product_features`.`sku_id`" : "") . "
-                WHERE " . implode(' AND ', $where);
+                WHERE `shop_product`.`type_id` IN (" . implode(',', $types) . ") AND " . implode(' AND ', $where);
         $result = $model->query($sql)->fetchAll();
         return $result;
     }
