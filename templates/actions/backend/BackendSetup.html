@@ -4,192 +4,16 @@
 <script src="{$wa_app_static_url}plugins/updateproducts/js/jquery.iframe-transport.js"></script>
 <script src="{$wa_app_static_url}plugins/updateproducts/js/jquery.fileupload.js"></script>
 
-{literal}
-<style>
-    .test_table td{
-        border: 3px double #000;
-        padding: 0px 10px;
-    }
-    .features-group{
-        border: 1px dashed #ccc;
-        margin-top: 20px;
-        padding: 10px;
-        display: inline-block;
-    }
-    .add-template{
-        display: inline-block;
-        margin-top: 5px;
-    }
-    .template-name{
-        display: none;
-    }
-    .с-add-template{
-        display: none;
-    }
-    .save-template{
-        display: none;
-    }
-    .loading-template{
-        display: none;
-    }
-    .yes-template{
-        display: none;
-    }
-    #price-data{
-        width: auto;
-    }
-    #price-data th{
-        text-align: center;
-    }
-    #price-data th,#price-data td{
-        padding: 3px 10px;
-        
-    }
-</style>
-{/literal}
+<link rel="stylesheet" href="{$wa_app_static_url}plugins/updateproducts/css/style.css">
 
 <script>
-    $(function() {
-
+    try {
         var templates = $.parseJSON('{$settings.templates}');
-        console.log(templates);
-        var url = '?plugin=updateproducts&action=upload';
-        $('.fileupload').fileupload({
-            url: url,
-            dataType: 'json',
-            done: function(e, data) {
-
-                if (data.result.status == 'ok') {
-                    $('#response').css('color', 'green');
-                    $('#response').text(data.result.data.message);
-                    $('#html').html(data.result.data.html);
-
-                } else if (data.result.status == 'fail') {
-                    $('#response').css('color', 'red');
-                    $('#response').text(data.result.errors[0][0]);
-                }
-
-            },
-            fail: function(e, data) {
-                $('#response').css('color', 'red');
-                $('#response').html(data.jqXHR.responseText);
-            },
-            progressall: function(e, data) {
-                var progress = parseInt(data.loaded / data.total * 100, 10);
-                $('#progress .progress-bar').css(
-                        'width',
-                        progress + '%'
-                        );
-            }
-        }).prop('disabled', !$.support.fileInput)
-                .parent().addClass($.support.fileInput ? undefined : 'disabled').click(function() {
-            $('#progress .progress-bar').css('width', '0%');
-            $('#response').html('');
-            $('#html').html('');
-        });
-
-        $('.add-template').click(function() {
-            $('.template-name').show();
-            $(this).hide();
-            $('.с-add-template').show();
-            $('.save-template').show();
-            return false;
-        });
-        $('.с-add-template').click(function() {
-            $('.template-name').hide();
-            $(this).hide();
-            $('.add-template').show();
-            $('.save-template').hide();
-            return false;
-        });
-
-        $('.save-template').click(function() {
-            if (!$('.template-name').val()) {
-                alert('Введите название шаблона');
-                return false;
-            }
-            var exist = false;
-            $('select.templates-list option').each(function() {
-                if ($('.template-name').val() == $(this).text())
-                {
-                    alert('Такое название шаблона уже существует. Введите другое.');
-                    exist = true;
-                    return false;
-                }
-            });
-            if (exist) {
-                return false;
-            }
-
-            var $form = $(this).closest('form');
-            $('.loading-template').show();
-            $('.save-template').hide();
-            $('.с-add-template').hide();
-            $.ajax({
-                type: 'POST',
-                url: '?plugin=updateproducts&action=save',
-                data: $form.serializeArray(),
-                dataType: 'json',
-                success: function(data, textStatus, jqXHR) {
-                    $('.loading-template').hide();
-                    $('.template-buttons').append('<span class="success-template"><i class="icon16 yes"></i>' + data.data.message + '</span>');
-                    var $option = $('<option>' + $('.template-name').val() + '</option>');
-                    $option.appendTo('.templates-list')
-                    $option.attr('selected', 'selected');
-                    templates[$('.template-name').val()] = data.data.template;
-                    setTimeout(function() {
-                        $('.success-template').hide();
-                        $('.с-add-template').click();
-                    }, 5000);
-
-                },
-                error: function(jqXHR, errorText) {
-                    $('.loading-template').hide();
-                    $('.template-buttons').append('<span class="error-template"><i class="icon16 no"></i>' + errorText + '<br>' + jqXHR.responseText + '</span>');
-                    setTimeout(function() {
-                        $('.error-template').remove();
-                        $('.с-add-template').click();
-                    }, 5000);
-                }
-            });
-            return false;
-        });
-        $('.templates-list').change(function() {
-            template_name = $(this).find('option:selected').text();
-            template = templates[template_name];
-            for (var key in template) {
-                var val = template[key];
-                $('[name="shop_updateproducts[' + key + ']"]').val(val);
-
-            }
-        });
-        $('.delete-template').click(function() {
-            $selected = $('.templates-list option:selected')
-            template_name = $selected.text();
-            $('.loading-template').show();
-            $.ajax({
-                type: 'POST',
-                url: '?plugin=updateproducts&action=delete',
-                data: {
-                    template_name: template_name
-                },
-                dataType: 'json',
-                success: function(data, textStatus, jqXHR) {
-                    $('.loading-template').hide();
-                    $selected.remove();
-                    $('.templates-list').change();
-                },
-                error: function(jqXHR, errorText) {
-
-                }
-            });
-            return false;
-        });
-
-        $('.templates-list').change();
-    });
+    } catch (e) {
+        alert(e.name);
+    }
 </script>
-
+<script src="{$wa_app_static_url}plugins/updateproducts/js/updateproducts.js"></script>
 
 
 
@@ -201,9 +25,6 @@
     <div id="s-updateproducts-form">
         <form action="?plugin=updateproducts&action=upload" method="post" id="plugins-settings-form" enctype="multipart/form-data">
             {$wa->csrf()}
-
-
-
             <div class="field">
                 <div class="name">
                     Номер листа
@@ -212,7 +33,6 @@
                     <input type="text" name="shop_updateproducts[list_num]" value="{$settings.list_num|escape}" /> 
                     <p class="hint">Порядковый номер листа в документе EXCEL</p>           
                 </div>
-
             </div>
 
             <div class="field">
@@ -258,7 +78,7 @@
                         {foreach $data_columns as $key => $column}
                         <tr>
                             <td>
-                               {$column.name}
+                                {$column.name}
                             </td>
                             <td class="align-center">
                                 <input type="text" class="short" name="shop_updateproducts[columns_{$key}]" value="" />   
@@ -281,100 +101,101 @@
                 </div>
             </div>
 
-                
 
-                <div class="field">
-                    <div class="name">
-                        Тип товаров
-                    </div>
-                    <div class="value">
-                        {foreach $product_types as $key => $product_type}
-                        <div><i class="icon16 {$product_type.icon}"></i><input type="checkbox" name="shop_updateproducts[types][]" value="1" /> - {$product_type.name}</div>
-                        {/foreach}          
-                    </div>
+
+            <div class="field">
+                <div class="name">
+                    Тип товаров
                 </div>
-
-
-
-                <div class="field">
-                    <div class="name">
-                        Склад
-                    </div>
-                    <div class="value">
-                        <select name="shop_updateproducts[stock_id]">
-                            <option {if $settings.stock_id=='0'}selected=""{/if}  value="0">По умолчанию</option>
-                            {foreach from=$stocks item=stock}
-                            <option {if $settings.stock_id==$stock.id}selected=""{/if} value="{$stock.id}">{$stock.name}</option>
-                            {/foreach}
-                        </select>           
-                    </div>
+                <div class="value">
+                    {foreach $product_types as $key => $product_type}
+                    <div><i class="icon16 {$product_type.icon}"></i><input type="checkbox" name="shop_updateproducts[types_{$key}]" value="1" /> - {$product_type.name}</div>
+                    {/foreach}          
                 </div>
+            </div>
 
-                <div class="field">
-                    <div class="name">
-                        Скрывать товары
-                    </div>
-                    <div class="value">
-                        <select name="shop_updateproducts[set_product_status]">
-                            <option {if $settings.set_product_status=='0'}selected=""{/if}  value="0">Нет</option>
-                            <option {if $settings.set_product_status=='1'}selected=""{/if}  value="1">Да</option>             
-                        </select>  
-                        <p class="hint">При загрузке прайс-листа плагин установит для всех товаров стутус "Скрытый", а для товаров из прайс-листа с ненулевым остатком "Опубликован"</p>
-                    </div>
+
+
+            <div class="field">
+                <div class="name">
+                    Склад
                 </div>
+                <div class="value">
+                    <select name="shop_updateproducts[stock_id]">
+                        <option {if $settings.stock_id=='0'}selected=""{/if}  value="0">По умолчанию</option>
+                        {foreach from=$stocks item=stock}
+                        <option {if $settings.stock_id==$stock.id}selected=""{/if} value="{$stock.id}">{$stock.name}</option>
+                        {/foreach}
+                    </select>           
+                </div>
+            </div>
+
+            <div class="field">
+                <div class="name">
+                    Скрывать товары
+                </div>
+                <div class="value">
+                    <select name="shop_updateproducts[set_product_status]">
+                        <option {if $settings.set_product_status=='0'}selected=""{/if}  value="0">Нет</option>
+                        <option {if $settings.set_product_status=='1'}selected=""{/if}  value="1">Да</option>             
+                    </select>  
+                    <p class="hint">При загрузке прайс-листа плагин установит для всех товаров стутус "Скрытый", а для товаров из прайс-листа с ненулевым остатком "Опубликован"</p>
+                </div>
+            </div>
 
 
-                <div class="field">
-                    <div class="name">
-                        Шаблоны
-                    </div>
-                    <div class="value">
-                        <select class="templates-list" name="templates_list">
-                            {foreach $templates as $template_name => $data}
-                            <option value="">{$template_name}</option>
-                            {/foreach}
-                        </select>  
-                        <span><a href="#" class="delete-template"><i class="icon16 delete"></i>Удалить</a></span>
+            <div class="field">
+                <div class="name">
+                    Шаблоны
+                </div>
+                <div class="value">
+                    <select class="templates-list" name="templates_list">
+                        {foreach $templates as $template_name => $data}
+                        <option value="{$template_name|escape}">{$template_name|escape}</option>
+                        {/foreach}
+                    </select>  
+                    <span><a href="#" class="update-template"><i class="icon16 update"></i>Обновить</a></span>
+                    <span><a href="#" class="delete-template"><i class="icon16 delete"></i>Удалить</a></span>
 
-                        <div>
+                    <div>
 
-                            <div >
-                                <input class="template-name" type="text" name="template_name"/>
-                            </div>
-                            <div class="template-buttons">
-                                <span class="loading-template"><i class="icon16 loading"></i>Загрузка...</span>
-                                <a href="#" class="add-template"><i class="icon16 add"></i>Добавить</a>
-                                <a href="#" class="save-template"><i class="icon16 add"></i>Сохранить</a>
-                                <a href="#" class="с-add-template"><i class="icon16 delete"></i>Отмена</a>
-                            </div>
-
+                        <div >
+                            <input class="template-name" type="text" name="template_name"/>
                         </div>
-                        <p class="hint">Шаблоны настроек</p>
+                        <div class="template-buttons">
+                            <span class="loading-template"><i class="icon16 loading"></i>Загрузка...</span>
+                            <a href="#" class="add-template"><i class="icon16 add"></i>Добавить</a>
+                            <a href="#" class="save-template"><i class="icon16 add"></i>Сохранить</a>
+                            <a href="#" class="с-add-template"><i class="icon16 delete"></i>Отмена</a>
+                        </div>
+
                     </div>
+                    <p class="hint">Шаблоны настроек</p>
                 </div>
+            </div>
 
 
-                <div class="field">
-                    <div class="value">
-                        <span id="test_button" class="btn btn-success fileinput-button">
-                            <span>Тестировать</span>
-                            <input class="fileupload" type="file" name="test" />
-                        </span>    
+            <div class="field">
+                <div class="value">
+                    <span id="test_button" class="btn btn-success fileinput-button">
+                        <span>Тестировать</span>
+                        <input class="fileupload" type="file" name="test" />
+                    </span>    
 
-                        <span id="update_button" class="btn btn-success fileinput-button">
-                            <span>Обновить</span>
-                            <input class="fileupload" type="file" name="update" />
-                        </span> 
-                        <p class="hint">Внимание! В процессе обработки файлов большого объема могут возникать ошибки! </p>        
-                    </div>
+                    <span id="update_button" class="btn btn-success fileinput-button">
+                        <span>Обновить</span>
+                        <input class="fileupload" type="file" name="update" />
+                    </span> 
+                    <p class="hint">Внимание! В процессе обработки файлов большого объема могут возникать ошибки! </p>        
                 </div>
+            </div>
 
-                <div id="progress" class="progress" style="width: 400px;">
-                    <div class="progress-bar progress-bar-success"></div>
-                </div>
+            <div id="progress" class="progress" style="width: 400px;">
+                <div class="progress-bar progress-bar-success"></div>
+            </div>
 
-                <div id="response"></div>
-                <div id="html"></div>
+            <div id="response"></div>
+            <div id="html"></div>
 
 
 

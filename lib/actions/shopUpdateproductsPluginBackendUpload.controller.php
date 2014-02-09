@@ -66,7 +66,12 @@ class shopUpdateproductsPluginBackendUploadController extends waJsonController {
             $row_count = intval($shop_updateproducts['row_count']);
             $set_product_status = $shop_updateproducts['set_product_status'];
             $stock_id = $shop_updateproducts['stock_id'];
+            
+            $types = $this->parseData('types_', $shop_updateproducts);
 
+            if (!$types) {
+                throw new waException('Ошибка. Укажите типы товаров для обновления.');
+            }
             $keysData = $this->parseData('keys_', $shop_updateproducts);
 
             if (!$keysData) {
@@ -76,7 +81,7 @@ class shopUpdateproductsPluginBackendUploadController extends waJsonController {
             foreach ($keysData as $key => $checked) {
                 $keys[$key] = $this->getColumnInfo($key);
             }
-            
+
             $updateData = $this->parseData('update_', $shop_updateproducts);
             if (!$updateData) {
                 throw new waException('Ошибка. Укажите поля для обновления.');
@@ -130,6 +135,7 @@ class shopUpdateproductsPluginBackendUploadController extends waJsonController {
                     'row_count' => $row_count,
                     'stock_id' => $stock_id,
                     'set_product_status' => $set_product_status,
+                    'types' => $types,
                 );
                 $result = $plugin->updateProducts($params);
                 $tpl = wa()->getAppPath($this->update_tpl, 'shop');
