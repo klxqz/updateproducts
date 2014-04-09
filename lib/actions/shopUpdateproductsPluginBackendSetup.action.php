@@ -27,9 +27,14 @@ class shopUpdateproductsPluginBackendSetupAction extends waViewAction {
         $type_model = new shopTypeModel();
         $product_types = $type_model->getAll($type_model->getTableId(), true);
 
-        $templates = json_decode($settings['templates'], true);
 
+        $templates = isset($settings['templates']) ? json_decode($settings['templates'], true) : array();
+        
+        
+        $model = new shopCurrencyModel();
+        $currencies = $model->getCurrencies();
 
+        $this->view->assign('currencies', $currencies);
         $this->view->assign('data_columns', $this->data_columns);
         $this->view->assign('product_types', $product_types);
         $this->view->assign('templates', $templates);

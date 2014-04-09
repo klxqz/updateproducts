@@ -66,6 +66,7 @@ class shopUpdateproductsPluginBackendUploadController extends waJsonController {
             $row_count = intval($shop_updateproducts['row_count']);
             $set_product_status = $shop_updateproducts['set_product_status'];
             $stock_id = $shop_updateproducts['stock_id'];
+            $currency = $shop_updateproducts['currency'];
             
             $types = $this->parseData('types_', $shop_updateproducts);
 
@@ -136,6 +137,7 @@ class shopUpdateproductsPluginBackendUploadController extends waJsonController {
                     'stock_id' => $stock_id,
                     'set_product_status' => $set_product_status,
                     'types' => array_keys($types),
+                    'currency' => $currency,
                 );
                 $result = $plugin->updateProducts($params);
                 $tpl = wa()->getAppPath($this->update_tpl, 'shop');

@@ -5,14 +5,14 @@
 <table class="test_table">
 <tr>
 {foreach from=$columns key=key item=column}
-<td {if isset($keys[$key]) && $keys[$key]}style="border-color:red;"{/if}>{$column.name}</td>
+<td {if isset($keys[$key]) && $keys[$key]}style="border-color:red;"{/if}>{$column.name|escape}</td>
 {/foreach}
 </tr>
 
 {for $i=$row_num to $to}
 <tr>
 {foreach from=$columns key=key item=column}
-<td {if isset($keys[$key]) && $keys[$key]}style="border-color:red;"{/if}>{if isset($list.cells[$i][$column.num])}{$list.cells[$i][$column.num]}{/if}</td>
+<td {if isset($keys[$key]) && $keys[$key]}style="border-color:red;"{/if}>{if isset($list.cells[$i][$column.num])}{$list.cells[$i][$column.num]|escape}{/if}</td>
 {/foreach}
 </tr>
 {/for}
@@ -20,7 +20,7 @@
 <p style="color: red;">Искать записи для обновления по полю:</p>
 <ul>
     {foreach $keys as $key}
-    <li style="color: red;">{$key.name}</li>
+    <li style="color: red;">{$key.name|escape}</li>
     {/foreach}
 </ul>
 

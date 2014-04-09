@@ -142,6 +142,22 @@
                     <p class="hint">При загрузке прайс-листа плагин установит для всех товаров стутус "Скрытый", а для товаров из прайс-листа с ненулевым остатком "Опубликован"</p>
                 </div>
             </div>
+            
+            
+            <div class="field">
+                <div class="name">
+                    Валюты
+                </div>
+                <div class="value">
+                    <select name="shop_updateproducts[currency]">
+                        <option value="">Без конвертации</option>
+                        {foreach $currencies as $currency}
+                        <option value="{$currency.code}">{$currency.title}</option>
+                        {/foreach}      
+                    </select>  
+                    <p class="hint">При загрузке прайс-листа плагин установит для всех товаров стутус "Скрытый", а для товаров из прайс-листа с ненулевым остатком "Опубликован"</p>
+                </div>
+            </div>
 
 
             <div class="field">

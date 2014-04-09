@@ -2,10 +2,8 @@
 
 class shopUpdateproductsPlugin extends shopPlugin {
 
-    protected $log_path = 'shop/plugins/updateproducts.log';
-
     protected function log($message) {
-        return waLog::log($message, $this->log_path);
+        return waLog::log($message, 'shop/plugins/updateproducts.log');
     }
 
     public function updateProducts($params) {
@@ -18,6 +16,7 @@ class shopUpdateproductsPlugin extends shopPlugin {
         $stock_id = $params['stock_id'];
         $set_product_status = $params['set_product_status'];
         $types = $params['types'];
+        $currency = $params['currency'];
 
         $model_sku = new shopProductSkusModel();
 
@@ -41,11 +40,17 @@ class shopUpdateproductsPlugin extends shopPlugin {
 
             if ($skus) {
                 foreach ($skus as $sku) {
+                    $product = new shopProduct($sku['product_id']);
                     $sku_id = $sku['id'];
                     $update_data = array();
                     foreach ($update as $id => $item) {
                         $field = $item['field'];
                         $value = $this->getDataValue($id, $dataRow, $columns);
+
+                        if ($currency && ($field == 'price' || $field == 'purchase_price' || $field == 'compare_price')) {
+                            $value = shop_currency($value, $currency, $product->currency, false);
+                        }
+
                         if ($field == 'stock') {
                             $update_data[$field] = $this->getStocks($sku_id);
                             $update_data[$field][$stock_id] = ($value !== false ? $value : 0);
@@ -54,7 +59,7 @@ class shopUpdateproductsPlugin extends shopPlugin {
                         }
                     }
 
-                    $product = new shopProduct($sku['product_id']);
+
                     $product_model = new shopProductModel();
                     $data = $product_model->getById($sku['product_id']);
                     $data['skus'] = $model_sku->getDataByProductId($sku['product_id'], true);
@@ -67,14 +72,14 @@ class shopUpdateproductsPlugin extends shopPlugin {
                     }
 
                     $product->save($data, true);
-                    //$this->log("SKU \"$update_by_name\"='$update_by_val' обновлен");
+                    $this->log("\"" . $product->name . "\" обновлен");
                     $updated++;
                 }
             } else {
                 $not_found++;
             }
         }
-        return array('updated' => $updated, 'not_found' => $not_found, 'log_path' => $this->log_path);
+        return array('updated' => $updated, 'not_found' => $not_found);
     }
 
     protected function getDataValue($key, $dataRow, $columns) {
@@ -110,7 +115,7 @@ class shopUpdateproductsPlugin extends shopPlugin {
                 $join = true;
             }
         }
-        
+
         $sql = "SELECT `shop_product_skus`.*
                 FROM `shop_product_skus`
                 " . ($types ? "LEFT JOIN `shop_product` ON `shop_product_skus`.`product_id` = `shop_product`.`id`" : "") . " 
