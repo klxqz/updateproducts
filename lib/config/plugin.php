@@ -4,7 +4,7 @@ return array(
     'name' => 'Обновление товаров',
     'description' => 'Обновление товаров по прайс-листу',
     'vendor' => '985310',
-    'version' => '1.0.2',
+    'version' => '1.0.3',
     'img' => 'img/updateproducts.png',
     'shop_settings' => false,
     'frontend' => false,

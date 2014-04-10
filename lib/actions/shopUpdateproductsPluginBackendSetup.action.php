@@ -30,7 +30,7 @@ class shopUpdateproductsPluginBackendSetupAction extends waViewAction {
 
         $templates = isset($settings['templates']) ? json_decode($settings['templates'], true) : array();
         
-        
+
         $model = new shopCurrencyModel();
         $currencies = $model->getCurrencies();
 
