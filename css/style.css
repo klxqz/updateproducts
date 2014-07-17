@@ -37,3 +37,14 @@
     padding: 3px 10px;
 
 }
+
+.error{
+    color: red;
+    font-weight: bold;
+}
+#hide-column-feature-row{
+    display: none;
+}
+.column-feature{
+    display: none;
+}

@@ -1,10 +1,7 @@
-<link rel="stylesheet" href="{$wa_app_static_url}plugins/updateproducts/css/jquery.fileupload.css">
-<link rel="stylesheet" href="{$wa_app_static_url}plugins/updateproducts/css/bootstrap.min.css">
-<script src="{$wa_app_static_url}plugins/updateproducts/js/vendor/jquery.ui.widget.js"></script>
-<script src="{$wa_app_static_url}plugins/updateproducts/js/jquery.iframe-transport.js"></script>
-<script src="{$wa_app_static_url}plugins/updateproducts/js/jquery.fileupload.js"></script>
+<script type="text/javascript" src="{$wa_url}wa-content/js/jquery-plugins/fileupload/jquery.iframe-transport.js"></script>
+<script type="text/javascript" src="{$wa_url}wa-content/js/jquery-plugins/fileupload/jquery.fileupload.js"></script>
 
-<link rel="stylesheet" href="{$wa_app_static_url}plugins/updateproducts/css/style.css">
+<link rel="stylesheet" href="{$wa_app_static_url}plugins/updateproducts/css/style.css?{$wa->version()}">
 
 <script>
     try {
@@ -13,47 +10,46 @@
         alert(e.name);
     }
 </script>
-<script src="{$wa_app_static_url}plugins/updateproducts/js/updateproducts.js"></script>
-
-
-
 <div class="block double-padded" style="padding-bottom: 10px;">
     <h1>Обновление товаров</h1>
     <p>Обновление товаров по прайс-листу</p>
-
-
     <div id="s-updateproducts-form">
-        <form action="?plugin=updateproducts&action=upload" method="post" id="plugins-settings-form" enctype="multipart/form-data">
+        <form action="?plugin=updateproducts&action=run" method="post" id="plugins-settings-form" enctype="multipart/form-data">
             {$wa->csrf()}
             <div class="field">
                 <div class="name">
                     Номер листа
                 </div>
                 <div class="value">
-                    <input type="text" name="shop_updateproducts[list_num]" value="{$settings.list_num|escape}" /> 
-                    <p class="hint">Порядковый номер листа в документе EXCEL</p>           
+                    <input type="text" name="shop_updateproducts[list_num]" value="{$settings.list_num|escape}" />
+                    <p class="hint">Порядковый номер листа в документе EXCEL</p>
                 </div>
             </div>
-
             <div class="field">
                 <div class="name">
                     Номер строки, с которой начинается загрузка
                 </div>
                 <div class="value">
-                    <input type="text" name="shop_updateproducts[row_num]" value="{$settings.row_num|escape}" />            
+                    <input type="text" name="shop_updateproducts[row_num]" value="{$settings.row_num|escape}" />
                 </div>
             </div>
-
             <div class="field">
                 <div class="name">
                     Количество обрабатываемых строк
                 </div>
                 <div class="value">
-                    <input type="text" name="shop_updateproducts[row_count]" value="{$settings.row_count|escape}" />            
+                    <input type="text" name="shop_updateproducts[row_count]" value="{$settings.row_count|escape}" />
                 </div>
             </div>
-
-
+                <div class="field">
+                <div class="name">
+                    Количество обрабатывемых товаров за один AJAX запрос
+                </div>
+                <div class="value">
+                    <input type="text" name="shop_updateproducts[product_number]" value="{$settings.product_number|escape}" />
+                    <p class="hint">Данный параметр влияет на сторость обработки данных. Чем больше значение тем больше товаров обрабатывается за один запрос. При сильно большом значение могут возникать ошибки "Fatal error: Maximum execution time of 30 seconds exceeded"</p>
+                </div>
+            </div>
             <div class="field">
                 <div class="name">
                     Данные из прайс листа
@@ -76,74 +72,87 @@
                             </tr>
                         </tbody>
                         {foreach $data_columns as $key => $column}
-                        <tr>
-                            <td>
-                                {$column.name}
-                            </td>
-                            <td class="align-center">
-                                <input type="text" class="short" name="shop_updateproducts[columns_{$key}]" value="" />   
-                            </td>
-                            <td class="align-center">
-                                {if $column.update}
-                                <input type="checkbox" name="shop_updateproducts[update_{$key}]" value="1" />
-                                {/if}
-                            </td>
-                            <td class="align-center">
-                                {if $column.key}
-                                <input type="checkbox" name="shop_updateproducts[keys_{$key}]" value="1" />
-                                {/if}
+                            <tr {if strpos($key,'feature') !== false}class="column-feature"{/if}>
+                                <td>
+                                    {$column.name}
+                                </td>
+                                <td class="align-center">
+                                    <input type="text" class="short" name="shop_updateproducts[columns_{$key}]" value="" />
+                                </td>
+                                <td class="align-center">
+                                    {if $column.update}
+                                        <input type="checkbox" name="shop_updateproducts[update_{$key}]" value="1" />
+                                    {/if}
+                                </td>
+                                <td class="align-center">
+                                    {if $column.key}
+                                        <input type="checkbox" name="shop_updateproducts[keys_{$key}]" value="1" />
+                                    {/if}
+                                </td>
+                            </tr>
+                            {if $key == 'sku:compare_price'}
+                                <tr id="hide-column-feature-row">
+                                    <td colspan="4">
+                                        <a id="hide-column-feature" href="#">Скрыть дополнительные характеристики</a>
+                                    </td>
+                                </tr>
+                            {/if}
+                        {/foreach}
+                        <tr id="show-column-feature-row">
+                            <td colspan="4">
+                                <a id="show-column-feature" href="#">Показать дополнительные характеристики</a>
                             </td>
                         </tr>
-                        {/foreach}
                     </table>
-
-
                 </div>
             </div>
-
-
-
             <div class="field">
                 <div class="name">
                     Тип товаров
                 </div>
                 <div class="value">
                     {foreach $product_types as $key => $product_type}
-                    <div><i class="icon16 {$product_type.icon}"></i><input type="checkbox" name="shop_updateproducts[types_{$key}]" value="1" /> - {$product_type.name}</div>
-                    {/foreach}          
+                        <div><i class="icon16 {$product_type.icon}"></i><input type="checkbox" name="shop_updateproducts[types_{$key}]" value="1" /> - {$product_type.name}</div>
+                        {/foreach}
                 </div>
             </div>
-
-
-
             <div class="field">
                 <div class="name">
                     Склад
                 </div>
                 <div class="value">
                     <select name="shop_updateproducts[stock_id]">
-                        <option {if $settings.stock_id=='0'}selected=""{/if}  value="0">По умолчанию</option>
+                        <option {if $settings.stock_id=='0'}selected=""{/if} value="0">По умолчанию</option>
                         {foreach from=$stocks item=stock}
-                        <option {if $settings.stock_id==$stock.id}selected=""{/if} value="{$stock.id}">{$stock.name}</option>
+                            <option {if $settings.stock_id==$stock.id}selected=""{/if} value="{$stock.id}">{$stock.name}</option>
                         {/foreach}
-                    </select>           
+                    </select>
                 </div>
             </div>
-
             <div class="field">
                 <div class="name">
                     Скрывать товары
                 </div>
                 <div class="value">
                     <select name="shop_updateproducts[set_product_status]">
-                        <option {if $settings.set_product_status=='0'}selected=""{/if}  value="0">Нет</option>
-                        <option {if $settings.set_product_status=='1'}selected=""{/if}  value="1">Да</option>             
-                    </select>  
+                        <option {if $settings.set_product_status=='0'}selected=""{/if} value="0">Нет</option>
+                        <option {if $settings.set_product_status=='1'}selected=""{/if} value="1">Да</option>
+                    </select>
                     <p class="hint">При загрузке прайс-листа плагин установит для всех товаров стутус "Скрытый", а для товаров из прайс-листа с ненулевым остатком "Опубликован"</p>
                 </div>
             </div>
-            
-            
+            <div class="field">
+                <div class="name">
+                    Обнулить количество товаров перед загрузкой
+                </div>
+                <div class="value">
+                    <select name="shop_updateproducts[set_product_null]">
+                        <option {if $settings.set_product_null=='0'}selected=""{/if} value="0">Нет</option>
+                        <option {if $settings.set_product_null=='1'}selected=""{/if} value="1">Да</option>
+                    </select>
+                    <p class="hint">При загрузке прайс-листа плагин установит для всех товаров нулевое количество товаров, а для товаров из прайс-листа с ненулевым остатком устанавливается значение из файла</p>
+                </div>
+            </div>
             <div class="field">
                 <div class="name">
                     Валюты
@@ -152,14 +161,12 @@
                     <select name="shop_updateproducts[currency]">
                         <option value="">Без конвертации</option>
                         {foreach $currencies as $currency}
-                        <option value="{$currency.code}">{$currency.title}</option>
-                        {/foreach}      
-                    </select>  
-                    <p class="hint">При загрузке прайс-листа плагин установит для всех товаров стутус "Скрытый", а для товаров из прайс-листа с ненулевым остатком "Опубликован"</p>
+                            <option value="{$currency.code}">{$currency.title}</option>
+                        {/foreach}
+                    </select>
+                    <p class="hint">В файле товары представленны в заданной валюте, товары будут переконвентированы в основную валюту</p>
                 </div>
             </div>
-
-
             <div class="field">
                 <div class="name">
                     Шаблоны
@@ -167,14 +174,12 @@
                 <div class="value">
                     <select class="templates-list" name="templates_list">
                         {foreach $templates as $template_name => $data}
-                        <option value="{$template_name|escape}">{$template_name|escape}</option>
+                            <option value="{$template_name|escape}">{$template_name|escape}</option>
                         {/foreach}
-                    </select>  
+                    </select>
                     <span><a href="#" class="update-template"><i class="icon16 update"></i>Обновить</a></span>
                     <span><a href="#" class="delete-template"><i class="icon16 delete"></i>Удалить</a></span>
-
                     <div>
-
                         <div >
                             <input class="template-name" type="text" name="template_name"/>
                         </div>
@@ -184,41 +189,49 @@
                             <a href="#" class="save-template"><i class="icon16 add"></i>Сохранить</a>
                             <a href="#" class="с-add-template"><i class="icon16 delete"></i>Отмена</a>
                         </div>
-
                     </div>
                     <p class="hint">Шаблоны настроек</p>
                 </div>
             </div>
-
-
             <div class="field">
+                <div class="name">
+                    Файл
+                </div>
                 <div class="value">
-                    <span id="test_button" class="btn btn-success fileinput-button">
-                        <span>Тестировать</span>
-                        <input class="fileupload" type="file" name="test" />
-                    </span>    
-
-                    <span id="update_button" class="btn btn-success fileinput-button">
-                        <span>Обновить</span>
-                        <input class="fileupload" type="file" name="update" />
-                    </span> 
-                    <p class="hint">Внимание! В процессе обработки файлов большого объема могут возникать ошибки! </p>        
+                    <input class="fileupload" type="file" name="file"/>
+                    <div id="response-upload-file"></div>
                 </div>
             </div>
-
-            <div id="progress" class="progress" style="width: 400px;">
-                <div class="progress-bar progress-bar-success"></div>
+            <div id="s-csvproduct-submit" class="field-group">
+                <div class="field">
+                    <div class="value submit">
+                        <input type="submit" value="Импортировать" class="button green">
+                    </div>
+                </div>
             </div>
+            <div id="s-regenerate-progressbar" style="display:none; margin-top: 20px;">
 
-            <div id="response"></div>
-            <div id="html"></div>
-
-
-
+                <div class="progressbar blue float-left" style="display: none; width: 70%;">
+                    <div class="progressbar-outer">
+                        <div class="progressbar-inner" style="width: 0%;"></div>
+                    </div>
+                </div>
+                <img style="float:left; margin-top:8px;" src="{$wa_url}wa-content/img/loading32.gif" />
+                <div class="clear"></div>
+                <span class="progressbar-description">0.000%</span>
+                <em class="hint">Пожалуйста, не закрывайте окно браузера до окончания загрузки</em>
+                <br clear="left" />
+                <em class="errormsg"></em>                    
+            </div>
+            <div id="s-regenerate-report" style="display: none; margin-top: 20px;">
+            </div>
         </form>
-
-
-
-
     </div>
 </div>
+
+<script type="text/javascript" src="{$wa_app_static_url}plugins/updateproducts/js/updateproducts.js?{$wa->version()}"></script>
+<script>
+    $(function() {
+        $.updateproducts.init();
+    });
+</script>
