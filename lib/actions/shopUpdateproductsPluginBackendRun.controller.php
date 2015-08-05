@@ -121,15 +121,16 @@ class shopUpdateproductsPluginBackendRunController extends waLongActionControlle
             'currency' => $currency,
         );
 
+        $model = new waModel();
         if ($set_product_status) {
             $sql = "UPDATE `shop_product` SET `status` = 0";
-            $model_sku->query($sql);
+            $model->query($sql);
         }
         if ($set_product_null) {
             $sql = "UPDATE `shop_product` SET `count` = 0";
-            $model_sku->query($sql);
+            $model->query($sql);
             $sql = "UPDATE `shop_product_skus` SET `count` = 0";
-            $model_sku->query($sql);
+            $model->query($sql);
         }
 
         $max_count = $list['numRows'] - $row_num + 1;
