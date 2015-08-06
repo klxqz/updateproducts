@@ -9,7 +9,7 @@ class shopUpdateproductsPluginBackendRunController extends waLongActionControlle
     );
     protected $sku_columns = array(
         'sku' => 'Артикул',
-        'name' => 'Наименование',
+        'name' => 'Наименование артикула',
         'stock' => 'Количество товара',
         'price' => 'Цена',
         'purchase_price' => 'Закупочная цена',
@@ -174,13 +174,19 @@ class shopUpdateproductsPluginBackendRunController extends waLongActionControlle
         $currency = $params['currency'];
 
         $model_sku = new shopProductSkusModel();
+        $feature_model = new shopFeatureModel();
+        $this->data['offset'] = 0;
         for ($i = 0; $i < $product_number; $i++) {
-            if ($this->data['offset'] > $this->data['count']) {
+            if ($this->data['offset'] >= $this->data['count']) {
                 return;
             }
-            $dataRow = $list['cells'][$row_num + $this->data['offset']];
-            $skus = $this->getSkuByFields($dataRow, $columns, $keys, $types);
-            if ($skus) {
+
+            if (!empty($list['cells'][$row_num + $this->data['offset']])) {
+                $dataRow = $list['cells'][$row_num + $this->data['offset']];
+                $skus = $this->getSkuByFields($dataRow, $columns, $keys, $types);
+            }
+
+            if (!empty($skus)) {
                 foreach ($skus as $sku) {
                     $product = new shopProduct($sku['product_id']);
                     $sku_id = $sku['id'];
@@ -207,7 +213,7 @@ class shopUpdateproductsPluginBackendRunController extends waLongActionControlle
                         $data['status'] = $this->inStock($data['skus']) ? 1 : 0;
                     }
                     $product->save($data, true);
-                    $this->log("\"" . $product->name . "\" обновлен");
+                    waLog::log("\"" . $product->name . "\" обновлен", 'updateproduct.log');
                     $this->data['updated'] ++;
                 }
             } else {
@@ -230,6 +236,18 @@ class shopUpdateproductsPluginBackendRunController extends waLongActionControlle
             }
             $this->data['offset'] ++;
         }
+    }
+
+    protected function inStock($skus) {
+        $in_stock = false;
+        foreach ($skus as $sku) {
+            foreach ($sku['stock'] as $stock) {
+                if (is_null($stock) || $stock > 0) {
+                    $in_stock = true;
+                }
+            }
+        }
+        return $in_stock;
     }
 
     protected function isDone() {

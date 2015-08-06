@@ -5,7 +5,7 @@ class shopUpdateproductsPluginBackendSetupAction extends waViewAction {
     protected $plugin_id = array('shop', 'updateproducts');
     protected $data_columns = array(
         'sku:sku' => array('name' => 'Артикул', 'key' => true, 'update' => true),
-        'sku:name' => array('name' => 'Наименование', 'key' => true, 'update' => true),
+        'sku:name' => array('name' => 'Наименование артикула', 'key' => true, 'update' => true),
         'sku:stock' => array('name' => 'Количество товара', 'key' => false, 'update' => true),
         'sku:price' => array('name' => 'Цена', 'key' => false, 'update' => true),
         'sku:purchase_price' => array('name' => 'Закупочная цена', 'key' => false, 'update' => true),

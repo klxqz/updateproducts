@@ -7,7 +7,7 @@ class shopUpdateproductsPluginBackendUploadFileController extends waJsonControll
     protected $require_path = 'plugins/updateproducts/lib/vendors/excel_reader2.php';
     protected $sku_columns = array(
         'sku' => 'Артикул',
-        'name' => 'Наименование',
+        'name' => 'Наименование артикула',
         'stock' => 'Количество товара',
         'price' => 'Цена',
         'purchase_price' => 'Закупочная цена',

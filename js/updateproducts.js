@@ -141,7 +141,6 @@ $.fn.serializeObject = function()
                 url: '?plugin=updateproducts&action=uploadFile',
                 dataType: 'json',
                 done: function(e, data) {
-                    console.log(data);
                     $('.loading').remove();
                     if (data.result.status == 'ok') {
                         $('#response-upload-file').html(data.result.data.html);
