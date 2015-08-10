@@ -175,7 +175,7 @@ class shopUpdateproductsPluginBackendRunController extends waLongActionControlle
 
         $model_sku = new shopProductSkusModel();
         $feature_model = new shopFeatureModel();
-        $this->data['offset'] = 0;
+        
         for ($i = 0; $i < $product_number; $i++) {
             if ($this->data['offset'] >= $this->data['count']) {
                 return;
