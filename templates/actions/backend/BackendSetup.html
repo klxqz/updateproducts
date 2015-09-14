@@ -1,60 +1,76 @@
 <script type="text/javascript" src="{$wa_url}wa-content/js/jquery-plugins/fileupload/jquery.iframe-transport.js"></script>
 <script type="text/javascript" src="{$wa_url}wa-content/js/jquery-plugins/fileupload/jquery.fileupload.js"></script>
-
 <link rel="stylesheet" href="{$wa_app_static_url}plugins/updateproducts/css/style.css?{$wa->version()}">
 
-<script>
-    try {
-        var templates = $.parseJSON('{$settings.templates}');
-    } catch (e) {
-        alert(e.name);
-    }
-</script>
-<div class="block double-padded" style="padding-bottom: 10px;">
-    <h1>Обновление товаров</h1>
-    <p>Обновление товаров по прайс-листу</p>
-    <div id="s-updateproducts-form">
-        <form action="?plugin=updateproducts&action=run" method="post" id="plugins-settings-form" enctype="multipart/form-data">
-            {$wa->csrf()}
-            <div class="field">
-                <div class="name">
-                    Номер листа
+<ul class="plugin-menu">
+    <li><a href="mailto:support@wa-plugins.ru">Поддержка разработчика плагина</a></li>
+</ul>
+
+
+{strip}
+    <div class="block double-padded" id="s-updateproducts-form">
+        <p>Обновление товаров по прайс-листу</p>
+
+        <form id="s-plugin-updateproducts" method="post" action="?plugin=updateproducts&module=run">
+            <div class="fields form">
+
+                <div class="field-group">
+                    <div class="field js-profile-description">
+                        <div class="name">Название профиля</div>
+                        <div class="value">
+                            <input type="text" name="profile[name]" value="{$profile.name|default:''|escape}" placeholder="Название профиля" id="s-plugin-updateproducts-profile-name">
+                            <input type="hidden" name="profile[id]" value="{$profile.id|default:'-1'}">
+                        </div>
+
+                    </div>
+
+                    <div class="field js-profile-description">
+                        <div class="name">Команда для запуска через CRON</div>
+                        <div class="value">
+                            <input type="text" value="{$cron_str|default:''|escape}">
+                            <p class="hint">Команда для запуска обновления товаров по рассписанию, через планировщик задач CRON</p>
+                        </div>
+
+                    </div>
                 </div>
-                <div class="value">
-                    <input type="text" name="shop_updateproducts[list_num]" value="{$settings.list_num|escape}" />
-                    <p class="hint">Порядковый номер листа в документе EXCEL</p>
+
+                <div class="clear-left"></div>
+
+
+                <div class="field-group">
+                    <h2 class="gray">Настройки чтения прайс-листа</h2>
+                    <div class="field">
+                        <div class="name">
+                            Номер листа
+                        </div>
+                        <div class="value">
+                            <input type="text" name="settings[list_num]" value="{$profile.config.list_num|default:'1'|escape}" />
+                            <p class="hint">Порядковый номер листа в документе EXCEL</p>
+                        </div>
+                    </div>
+                    <div class="field">
+                        <div class="name">
+                            Номер строки, с которой начинается загрузка
+                        </div>
+                        <div class="value">
+                            <input type="text" name="settings[row_num]" value="{$profile.config.row_num|default:'1'|escape}" />
+                            <p class="hint">Если число не указано, обработка происходит с первой строки</p>
+                        </div>
+                    </div>
+                    <div class="field">
+                        <div class="name">
+                            Количество обрабатываемых строк
+                        </div>
+                        <div class="value">
+                            <input type="text" name="settings[row_count]" value="{$profile.config.row_count|default:''|escape}" />
+                            <p class="hint">Если число не указано, обрабатываются все строки до конца файла</p>
+                        </div>
+                    </div>
                 </div>
-            </div>
-            <div class="field">
-                <div class="name">
-                    Номер строки, с которой начинается загрузка
-                </div>
-                <div class="value">
-                    <input type="text" name="shop_updateproducts[row_num]" value="{$settings.row_num|escape}" />
-                </div>
-            </div>
-            <div class="field">
-                <div class="name">
-                    Количество обрабатываемых строк
-                </div>
-                <div class="value">
-                    <input type="text" name="shop_updateproducts[row_count]" value="{$settings.row_count|escape}" />
-                </div>
-            </div>
-                <div class="field">
-                <div class="name">
-                    Количество обрабатывемых товаров за один AJAX запрос
-                </div>
-                <div class="value">
-                    <input type="text" name="shop_updateproducts[product_number]" value="{$settings.product_number|escape}" />
-                    <p class="hint">Данный параметр влияет на сторость обработки данных. Чем больше значение тем больше товаров обрабатывается за один запрос. При сильно большом значение могут возникать ошибки "Fatal error: Maximum execution time of 30 seconds exceeded"</p>
-                </div>
-            </div>
-            <div class="field">
-                <div class="name">
-                    Данные из прайс листа
-                </div>
-                <div class="value">
+
+                <div class="field-group">
+                    <h2 class="gray">Настройки столбцов из прайс-листа</h2>
+                    <p class="hint">Сопоставление столбцов из прайс-листа с соответствующими полями товаров интернет-магазина</p>
                     <table id="price-data" class="zebra">
                         <tbody><tr class="header">
                                 <th>
@@ -72,166 +88,205 @@
                             </tr>
                         </tbody>
                         {foreach $data_columns as $key => $column}
-                            <tr {if strpos($key,'feature') !== false}class="column-feature"{/if}>
+                            <tr>
                                 <td>
                                     {$column.name}
                                 </td>
                                 <td class="align-center">
-                                    <input type="text" class="short" name="shop_updateproducts[columns_{$key}]" value="" />
+                                    {$field = "columns_`$key`"}
+                                    <input type="text" class="short" name="settings[columns_{$key}]" value="{if !empty($profile.config[$field])}{$profile.config[$field]}{/if}" />
                                 </td>
                                 <td class="align-center">
                                     {if $column.update}
-                                        <input type="checkbox" name="shop_updateproducts[update_{$key}]" value="1" />
+                                        {$field = "update_`$key`"}
+                                        <input type="checkbox" name="settings[update_{$key}]" value="1" {if !empty($profile.config[$field])}checked="checked"{/if} />
                                     {/if}
                                 </td>
                                 <td class="align-center">
                                     {if $column.key}
-                                        <input type="checkbox" name="shop_updateproducts[keys_{$key}]" value="1" />
+                                        {$field = "keys_`$key`"}
+                                        <input type="checkbox" name="settings[keys_{$key}]" value="1" {if !empty($profile.config[$field])}checked="checked"{/if} />
                                     {/if}
                                 </td>
                             </tr>
-                            {if $key == 'sku:compare_price'}
-                                <tr id="hide-column-feature-row">
-                                    <td colspan="4">
-                                        <a id="hide-column-feature" href="#">Скрыть дополнительные характеристики</a>
-                                    </td>
-                                </tr>
-                            {/if}
                         {/foreach}
-                        <tr id="show-column-feature-row">
-                            <td colspan="4">
-                                <a id="show-column-feature" href="#">Показать дополнительные характеристики</a>
-                            </td>
-                        </tr>
                     </table>
                 </div>
-            </div>
-            <div class="field">
-                <div class="name">
-                    Тип товаров
-                </div>
-                <div class="value">
-                    {foreach $product_types as $key => $product_type}
-                        <div><i class="icon16 {$product_type.icon}"></i><input type="checkbox" name="shop_updateproducts[types_{$key}]" value="1" /> - {$product_type.name}</div>
-                        {/foreach}
-                </div>
-            </div>
-            <div class="field">
-                <div class="name">
-                    Склад
-                </div>
-                <div class="value">
-                    <select name="shop_updateproducts[stock_id]">
-                        <option {if $settings.stock_id=='0'}selected=""{/if} value="0">По умолчанию</option>
-                        {foreach from=$stocks item=stock}
-                            <option {if $settings.stock_id==$stock.id}selected=""{/if} value="{$stock.id}">{$stock.name}</option>
-                        {/foreach}
-                    </select>
-                </div>
-            </div>
-            <div class="field">
-                <div class="name">
-                    Скрывать товары
-                </div>
-                <div class="value">
-                    <select name="shop_updateproducts[set_product_status]">
-                        <option {if $settings.set_product_status=='0'}selected=""{/if} value="0">Нет</option>
-                        <option {if $settings.set_product_status=='1'}selected=""{/if} value="1">Да</option>
-                    </select>
-                    <p class="hint">При загрузке прайс-листа плагин установит для всех товаров стутус "Скрытый", а для товаров из прайс-листа с ненулевым остатком "Опубликован"</p>
-                </div>
-            </div>
-            <div class="field">
-                <div class="name">
-                    Обнулить количество товаров перед загрузкой
-                </div>
-                <div class="value">
-                    <select name="shop_updateproducts[set_product_null]">
-                        <option {if $settings.set_product_null=='0'}selected=""{/if} value="0">Нет</option>
-                        <option {if $settings.set_product_null=='1'}selected=""{/if} value="1">Да</option>
-                    </select>
-                    <p class="hint">При загрузке прайс-листа плагин установит для всех товаров нулевое количество товаров, а для товаров из прайс-листа с ненулевым остатком устанавливается значение из файла</p>
-                </div>
-            </div>
-            <div class="field">
-                <div class="name">
-                    Валюты
-                </div>
-                <div class="value">
-                    <select name="shop_updateproducts[currency]">
-                        <option value="">Без конвертации</option>
-                        {foreach $currencies as $currency}
-                            <option value="{$currency.code}">{$currency.title}</option>
-                        {/foreach}
-                    </select>
-                    <p class="hint">В файле товары представленны в заданной валюте, товары будут переконвентированы в основную валюту</p>
-                </div>
-            </div>
-            <div class="field">
-                <div class="name">
-                    Шаблоны
-                </div>
-                <div class="value">
-                    <select class="templates-list" name="templates_list">
-                        {foreach $templates as $template_name => $data}
-                            <option value="{$template_name|escape}">{$template_name|escape}</option>
-                        {/foreach}
-                    </select>
-                    <span><a href="#" class="update-template"><i class="icon16 update"></i>Обновить</a></span>
-                    <span><a href="#" class="delete-template"><i class="icon16 delete"></i>Удалить</a></span>
-                    <div>
-                        <div >
-                            <input class="template-name" type="text" name="template_name"/>
-                        </div>
-                        <div class="template-buttons">
-                            <span class="loading-template"><i class="icon16 loading"></i>Загрузка...</span>
-                            <a href="#" class="add-template"><i class="icon16 add"></i>Добавить</a>
-                            <a href="#" class="save-template"><i class="icon16 add"></i>Сохранить</a>
-                            <a href="#" class="с-add-template"><i class="icon16 delete"></i>Отмена</a>
-                        </div>
-                    </div>
-                    <p class="hint">Шаблоны настроек</p>
-                </div>
-            </div>
-            <div class="field">
-                <div class="name">
-                    Файл
-                </div>
-                <div class="value">
-                    <input class="fileupload" type="file" name="file"/>
-                    <div id="response-upload-file"></div>
-                </div>
-            </div>
-            <div id="s-csvproduct-submit" class="field-group">
-                <div class="field">
-                    <div class="value submit">
-                        <input type="submit" value="Импортировать" class="button green">
-                    </div>
-                </div>
-            </div>
-            <div id="s-regenerate-progressbar" style="display:none; margin-top: 20px;">
 
-                <div class="progressbar blue float-left" style="display: none; width: 70%;">
-                    <div class="progressbar-outer">
-                        <div class="progressbar-inner" style="width: 0%;"></div>
+
+
+
+                <div class="field-group">
+                    <h2 class="gray">Настройки обновления</h2>
+                    <div class="field">
+                        <div class="name">
+                            Тип товаров
+                        </div>
+                        <div class="value">
+                            {foreach $product_types as $key => $product_type}
+                                <div>
+                                    {$field = "types_`$key`"}
+                                    <i class="icon16 {$product_type.icon}"></i><input type="checkbox" name="settings[types_{$key}]" value="1" {if !empty($profile.config[$field])}checked="checked"{/if} /> - {$product_type.name}
+                                </div>
+                            {/foreach}
+                            <p class="hint">Укажите типы товаров, которые будут участвовать в обновление</p>
+                        </div>
+                    </div>
+                    <div class="field">
+                        <div class="name">
+                            Склад
+                        </div>
+                        <div class="value">
+                            <select name="settings[stock_id]">
+                                <option {if $profile.config.stock_id|default:0=='0'}selected=""{/if} value="0">По умолчанию</option>
+                                {foreach from=$stocks item=stock}
+                                    <option {if $profile.config.stock_id|default:0==$stock.id}selected=""{/if} value="{$stock.id}">{$stock.name}</option>
+                                {/foreach}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="field">
+                        <div class="name">
+                            Скрывать товары
+                        </div>
+                        <div class="value">
+                            <select name="settings[set_product_status]">
+                                <option {if $profile.config.set_product_status|default:0=='0'}selected=""{/if} value="0">Нет</option>
+                                <option {if $profile.config.set_product_status|default:0=='1'}selected=""{/if} value="1">Да</option>
+                            </select>
+                            <p class="hint">При загрузке прайс-листа плагин установит для всех товаров стутус "Скрытый", а для товаров из прайс-листа с ненулевым остатком "Опубликован"</p>
+                        </div>
+                    </div>
+                    <div class="field">
+                        <div class="name">
+                            Обнулить количество товаров перед загрузкой
+                        </div>
+                        <div class="value">
+                            <select name="settings[set_product_null]">
+                                <option {if $profile.config.set_product_null|default:0=='0'}selected=""{/if} value="0">Нет</option>
+                                <option {if $profile.config.set_product_null|default:0=='1'}selected=""{/if} value="1">Да</option>
+                            </select>
+                            <p class="hint">При загрузке прайс-листа плагин установит для всех товаров нулевое количество товаров, а для товаров из прайс-листа с ненулевым остатком устанавливается значение из файла</p>
+                        </div>
+                    </div>
+                    <div class="field">
+                        <div class="name">
+                            Валюты
+                        </div>
+                        <div class="value">
+                            <select name="settings[currency]">
+                                <option value="">Без конвертации</option>
+                                {foreach $currencies as $currency}
+                                    <option value="{$currency.code}" {if $profile.config.currency|default:'' == $currency.code}selected=""{/if}>{$currency.title}</option>
+                                {/foreach}
+                            </select>
+                            <p class="hint">Если в прайс-листе товары указаны в основной валюте, выбирите "Без конвертации".<br/>Если в прайс-листе, товары указаны не в основной валюте интернет-магазина, тогда укажите эту валюту валюту. Товары будут переконвентированы из указанной валюты в основную.</p>
+                        </div>
+                    </div>
+                    <div class="field">
+                        <div class="name">
+                            Тип наценки
+                        </div>
+                        <div class="value">
+                            <input type="radio" class="short" name="settings[margin_type]" value="percent" checked="checked" />- процентная<br/>
+                            <input type="radio" class="short" name="settings[margin_type]" value="fixed" />- фиксированная
+                        </div>
+                    </div>
+                    <div class="field">
+                        <div class="name">
+                            Наценка
+                        </div>
+                        <div class="value">
+                            <input type="text" class="short" name="settings[margin]" value="{$profile.config.margin|default:0|escape}" />
+                        </div>
                     </div>
                 </div>
-                <img style="float:left; margin-top:8px;" src="{$wa_url}wa-content/img/loading32.gif" />
-                <div class="clear"></div>
-                <span class="progressbar-description">0.000%</span>
-                <em class="hint">Пожалуйста, не закрывайте окно браузера до окончания загрузки</em>
-                <br clear="left" />
-                <em class="errormsg"></em>                    
-            </div>
-            <div id="s-regenerate-report" style="display: none; margin-top: 20px;">
+
+                <div class="field-group">
+                    <h2 class="gray">Настройки обновления</h2>
+                    <div class="field">
+                        <div class="name">
+                            Ссылка на скачивание
+                        </div>
+                        <div class="value no-shift">
+                            <input type="text" name="settings[file_url]" id="image-url" value="{$profile.config.file_url|default:''|escape}" >
+                            <a data-action="?plugin=updateproducts&module=upload" id="image-upload-but" href="#"><i class="icon16 upload"></i>Загрузить</a><span id="image-upload-loading" style="display:none;"><i class="icon16 loading"></i>Загрузка...</span>
+                        </div>
+                    </div>
+                    <div class="field">
+                        <div class="name">
+                            Файл
+                        </div>
+                        <div class="value no-shift">
+                            <input type="file" name="" class="fileupload" data-action="?plugin=updateproducts&module=upload">
+                            <div class="js-fileupload-progress" style="display:none;"></div>
+                            <span class="errormsg" style="display:none;"><br><br><i class="icon10 no"></i> <span></span></span>
+
+                        </div>
+                    </div>
+
+                </div>
+
+
+
+                <div class="clear-left"></div>
+
+                <div class="field-group" id="plugin-updateproducts-submit">
+                    <div class="submit">
+                        <input type="submit" class="button green" value="Сохранить">
+
+                        <input type="submit" class="button green" value="Обновить">
+                        <br><br>
+                        <em class="small js-profile-notice">При экспорте изменения в настройках профиля будут сохранены и применены к последующим экспортам автоматически</em>
+
+                        <div class="js-progressbar-container" style="display:none;">
+                            <div class="progressbar blue float-left" style="display: none; width: 70%;">
+                                <div class="progressbar-outer">
+                                    <div class="progressbar-inner" style="width: 0;"></div>
+                                </div>
+                            </div>
+                            <img style="float:left; margin-top:8px;" src="{$wa_url}wa-content/img/loading32.gif"/>
+
+                            <div class="clear"></div>
+                            <span class="progressbar-description"></span>
+                            <br style="clear:left;"/>
+                            <br>
+                            <span class="small italic">
+                                Не закрывайте окно браузера и не покидайте страницу до тех пор, пока процесс экспорта не будет завершен
+                            </span>
+                        </div>
+                        <br><br>
+                        <em class="errormsg"></em>
+                    </div>
+                </div>
+
+                <div class="field-group" id="plugin-updateproducts-report" style="display: none;">
+                    <div class="field">
+                        <div class="value"></div>
+                        <div class="value">
+                            <br>
+                            <a href="?module=updateproducts&action=download&profile={$profile.id|default:''}" class="bold nowrap"><i class="icon16 download"></i>[`Download`]</a>
+                        </div>
+                    </div>
+                </div>
             </div>
         </form>
-    </div>
-</div>
 
-<script type="text/javascript" src="{$wa_app_static_url}plugins/updateproducts/js/updateproducts.js?{$wa->version()}"></script>
-<script>
-    $(function() {
-        $.updateproducts.init();
-    });
+    </div>
+
+    <div class="clear"></div>
+{/strip}
+
+<script type="text/javascript">
+    if ($.importexport.plugins.updateproducts) {
+        $.importexport.plugins.updateproducts.init({$params|json_encode});
+    } else {
+
+        $.getScript('{$wa_app_static_url}plugins/updateproducts/js/updateproducts.js', function () {
+            $.importexport.plugins.updateproducts.init({$params|json_encode});
+            $.importexport.plugins.updateproducts.initForm();
+        });
+    }
+    {* generic code for plugins with profiles support *}
+    $.importexport.profiles.set('updateproducts',{$profiles|json_encode});
 </script>

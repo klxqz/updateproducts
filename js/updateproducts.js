@@ -1,306 +1,354 @@
-$.fn.serializeObject = function()
-{
-    var o = {};
-    var a = this.serializeArray();
-    $.each(a, function() {
-        if (o[this.name] !== undefined) {
-            if (!o[this.name].push) {
-                o[this.name] = [o[this.name]];
-            }
-            o[this.name].push(this.value || '');
-        } else {
-            o[this.name] = this.value || '';
-        }
-    });
-    return o;
-};
-(function($) {
-    "use strict";
-    $.updateproducts = {
-        options: {},
-        init: function(options) {
-            var that = this;
-            that.options = options;
-            this.initFileUpload();
-            this.initMain();
-            this.initEvents();
+$.extend($.importexport.plugins, {
+    updateproducts: {
+        form: null,
+        ajax_pull: {},
+        progress: false,
+        id: null,
+        debug: {
+            'memory': 0.0,
+            'memory_avg': 0.0
         },
-        initEvents: function() {
-            this.addTemplate();
-            this.сAddTemplate();
-            this.saveTemplate();
-            this.updateTemplate();
-            this.deleteTemplate();
-            this.templatesListChange();
-            $('#show-column-feature').click(function() {
-                $('.column-feature').show();
-                $('#show-column-feature-row').hide();
-                $('#hide-column-feature-row').show();
-                return false;
-            });
-            $('#hide-column-feature').click(function() {
-                $('.column-feature').hide();
-                $('#hide-column-feature-row').hide();
-                $('#show-column-feature-row').show();
-                return false;
-            });
+        data: {
+            'params': {}
+        },
+        $form: null,
+        init: function (data) {
+            this.$form = $("#s-plugin-updateproducts");
+            $.extend(this.data, data);
+            this.uploadInit();
+            this.uploadByUrlInit();
+        },
+        hashAction: function (hash) {
+            $.importexport.products.action(hash);
+            window.location.hash = window.location.hash.replace(/\/hash\/.+$/, '/');
+        },
+        action: function () {
 
         },
-        initMain: function() {
-            $('#plugins-settings-form').submit(function() {
-                var form = $(this);
-                var url = form.attr('action');
-                var processId;
+        blur: function () {
 
-                $('#s-regenerate-progressbar').show();
-                form.find('.progressbar .progressbar-inner').css('width', '0%');
-                form.find('.progressbar-description').text('0.000%');
-                form.find('.progressbar').show();
-                $("#s-regenerate-report").hide();
+        },
+        uploadByUrlInit: function () {
+            var upload = $('.fileupload:first').closest('div.field');
+            $('#image-upload-but').click(function () {
+                var self = $(this);
+                var $form = $('#s-plugin-updateproducts');
+                $('#image-upload-loading').show();
+                $.ajax({
+                    type: 'POST',
+                    url: self.data('action'),
+                    data: $form.serializeArray(),
+                    dataType: 'json',
+                    success: function (data, textStatus, jqXHR) {
+                        console.log(data);
+                        $('#image-upload-loading').hide();
 
-                var cleanup = function() {
-                    $.post(url, {processId: processId, cleanup: 1}, function(r) {
-                        $('#s-regenerate-progressbar').hide();
-                        $("#s-regenerate-report").show();
-                        if (r.report) {
-                            $("#s-regenerate-report").html(r.report);
-                            $("#s-regenerate-report").find('.close').click(function() {
-                            });
+                        if (data.status == 'ok') {
+                            $('.js-fileupload-progress').html('<i class="icon16 yes"></i>');
+                            $('.js-fileupload-progress').append(data.data.html);
+                        } else {
+                            $('.js-fileupload-progress').html('<i class="icon16 no"></i>' + data.errors.join(', '));
                         }
-                    }, 'json');
-                };
-
-                var step = function(delay) {
-                    delay = delay || 2000;
-                    var timer_id = setTimeout(function() {
-                        $.post(url, $.extend({processId: processId}, form.serializeObject()),
-                                function(r) {
-                                    if (!r) {
-                                        step(3000);
-                                    } else if (r && r.ready) {
-                                        form.find('.progressbar .progressbar-inner').css({
-                                            width: '100%'
-                                        });
-                                        form.find('.progressbar-description').text('100%');
-                                        cleanup();
-                                    } else if (r && r.error) {
-                                        form.find('.errormsg').text(r.error);
-                                    } else {
-                                        if (r && r.progress) {
-                                            var progress = parseFloat(r.progress.replace(/,/, '.'));
-                                            form.find('.progressbar .progressbar-inner').animate({
-                                                'width': progress + '%'
-                                            });
-                                            form.find('.progressbar-description').text(r.progress + ' - ' + r.step);
-                                        }
-                                        if (r && r.warning) {
-                                            form.find('.progressbar-description').append('<i class="icon16 exclamation"></i><p>' + r.warning + '</p>');
-                                        }
-                                        step();
-                                    }
-                                },
-                                'json').error(function() {
-                            step(3000);
-                        });
-                    }, delay);
-                };
-
-                $.post(url, form.serializeArray(),
-                        function(r) {
-                            if (r && r.processId) {
-                                processId = r.processId;
-                                step(1000);   // invoke Runner
-                                step();         // invoke Messenger
-                            } else if (r && r.error) {
-                                form.find('.errormsg').text(r.error);
-                            } else {
-                                form.find('.errormsg').text('Server error');
-                            }
-                        },
-                        'json').error(function() {
-                    form.find('errormsg').text('Server error');
+                        $('.js-fileupload-progress').show();
+                    },
+                    error: function (jqXHR, errorText) {
+                        $('.js-fileupload-progress').html('<i class="icon16 no"></i>' + jqXHR.responseText);
+                    }
                 });
-
                 return false;
             });
-
-            $('.upload_type').change(function() {
-                $('.upload-field').hide();
-                if ($(this).val() == 'url') {
-                    $('#upload-url').show();
-                } else {
-                    $('#upload-file').show();
-                }
-            });
-            $('.upload_type:first').click();
         },
-        initFileUpload: function() {
-            var self = this;
-            var form = $(this).closest('#plugins-settings-form');
-            $('.fileupload').fileupload({
-                url: '?plugin=updateproducts&action=uploadFile',
+        uploadInit: function () {
+
+            var url = this.$form.find('.fileupload:first').data('action');
+            var upload = this.$form.find('.fileupload:first').parents('div.field');
+
+            this.$form.find('.fileupload:first').fileupload({
+                url: url,
                 dataType: 'json',
-                done: function(e, data) {
-                    $('.loading').remove();
+                start: function () {
+                    upload.find('.fileupload:first').hide();
+                    upload.find('.js-fileupload-progress').html('<i class="icon16 loading"></i>');
+                    upload.find('.js-fileupload-progress').show();
+                },
+                done: function (e, data) {
                     if (data.result.status == 'ok') {
-                        $('#response-upload-file').html(data.result.data.html);
-                    } else if (data.result.status == 'fail') {
-                        self.showErrors('#response-upload-file', data.result.errors);
+                        upload.find('.js-fileupload-progress').html('<i class="icon16 yes"></i>');
+                        upload.find('.js-fileupload-progress').append(data.result.data.html);
+                        upload.find('.fileupload:first').show();
+                    } else {
+                        upload.find('.js-fileupload-progress').html('<i class="icon16 no"></i>' + data.result.errors.join(', '));
+                        upload.find('.fileupload:first').show();
                     }
+
                 },
-                fail: function(e, data) {
-                    $('.loading').remove();
-                    self.showErrors('#response-upload-file', data.textStatus);
-                },
-                start: function(e, data) {
-                    $(this).parent().append('<span class="loading"><i class="icon16 loading"></i><span id="progress"></span></span>');
-                },
-                progressall: function(e, data) {
-                    var progress = parseInt(data.loaded / data.total * 100, 10);
-                    $('#progress').html(progress + '%');
+                fail: function (e, data) {
+                    upload.find('.js-fileupload-progress').html('<i class="icon16 no"></i>' + data.jqXHR.responseText);
+                    upload.find('.fileupload:first').show();
                 }
             });
+
         },
-        addTemplate: function() {
-            $('.add-template').click(function() {
-                $('.template-name').show();
-                $(this).hide();
-                $('.с-add-template').show();
-                $('.save-template').show();
-                return false;
-            });
-        },
-        сAddTemplate: function() {
-            $('.с-add-template').click(function() {
-                $('.template-name').hide();
-                $(this).hide();
-                $('.add-template').show();
-                $('.save-template').hide();
-                return false;
-            });
-        },
-        saveTemplate: function() {
-            $('.save-template').click(function() {
-                if (!$('.template-name').val()) {
-                    alert('Введите название шаблона');
-                    return false;
+        actionHandler: function ($el) {
+            try {
+                var args = $el.attr('href').replace(/.*#\/?/, '').replace(/\/$/, '').split('/');
+                args.shift();
+                var method = $.shop.getMethod(args, this);
+
+                if (method.name) {
+                    $.shop.trace('$.importexport.plugins.updateproducts', method);
+                    if (!$el.hasClass('js-confirm') || confirm($el.data('confirm-text') || $el.attr('title') || 'Are you sure?')) {
+                        method.params.unshift($el);
+                        this[method.name].apply(this, method.params);
+                    }
+                } else {
+                    $.shop.error('Not found js handler for link', [method, args, $el])
                 }
-                var exist = false;
-                $('select.templates-list option').each(function() {
-                    if ($('.template-name').val() == $(this).text())
-                    {
-                        alert('Такое название шаблона уже существует. Введите другое.');
-                        exist = true;
-                        return false;
-                    }
-                });
-                if (exist) {
-                    return false;
+            } catch (e) {
+                $.shop.error('Exception ' + e.message, e);
+            }
+            return false;
+        },
+        initForm: function () {
+
+            this.$form.unbind('submit.updateproducts').bind('submit.updateproducts', function (event) {
+                $.shop.trace('submit.updateproducts ' + event.namespace, event);
+                try {
+                    var $form = $(this);
+                    $form.find(':input, :submit').attr('disabled', false);
+                    $.importexport.plugins.updateproducts.updateproductsHandler(this);
+                } catch (e) {
+                    $('#plugin-updateproducts-transport-group').find(':input').attr('disabled', false);
+                    $.shop.error('Exception: ' + e.message, e);
                 }
-
-                var form = $(this).closest('form');
-                $('.loading-template').show();
-                $('.save-template').hide();
-                $('.с-add-template').hide();
-                $.ajax({
-                    type: 'POST',
-                    url: '?plugin=updateproducts&action=save',
-                    data: form.serializeArray(),
-                    dataType: 'json',
-                    success: function(data, textStatus, jqXHR) {
-                        $('.loading-template').hide();
-                        $('.template-buttons').append('<span class="success-template"><i class="icon16 yes"></i>' + data.data.message + '</span>');
-                        var option = $('<option>' + $('.template-name').val() + '</option>');
-                        option.appendTo('.templates-list')
-                        option.attr('selected', 'selected');
-                        templates[$('.template-name').val()] = data.data.template;
-                        setTimeout(function() {
-                            $('.success-template').hide();
-                            $('.с-add-template').click();
-                        }, 5000);
-
-                    },
-                    error: function(jqXHR, errorText) {
-                        $('.loading-template').hide();
-                        $('.template-buttons').append('<span class="error-template"><i class="icon16 no"></i>' + errorText + '<br>' + jqXHR.responseText + '</span>');
-                        setTimeout(function() {
-                            $('.error-template').remove();
-                            $('.с-add-template').click();
-                        }, 5000);
-                    }
-                });
                 return false;
             });
-        },
-        updateTemplate: function() {
-            $('.update-template').click(function() {
-                var form = $('form#plugins-settings-form');
-                var selected = $('.templates-list option:selected');
-                var template_name = selected.text();
-                $('.loading-template').show();
-                $.ajax({
-                    type: 'POST',
-                    url: '?plugin=updateproducts&action=update',
-                    data: form.serializeArray(),
-                    dataType: 'json',
-                    success: function(data, textStatus, jqXHR) {
-                        $('.loading-template').hide();
-                        templates[template_name] = data.data.template;
-                    },
-                    error: function(jqXHR, errorText) {
 
-                    }
-                });
-                return false;
-            });
+
         },
-        deleteTemplate: function() {
-            $('.delete-template').click(function() {
-                var selected = $('.templates-list option:selected');
-                var template_name = selected.text();
-                $('.loading-template').show();
+        onInit: function () {
+            this.initForm();
+        },
+        updateproductsHandler: function (element) {
+            this.form = $(element);
+            /**
+             * reset required form fields errors
+             */
+            this.form.find('.value.js-required :input.error').removeClass('error');
+            /**
+             * verify form
+             */
+            var valid = true;
+            this.form.find('.value.js-required :input:visible:not(:disabled)').each(function () {
+                var $this = $(this);
+                var value = $this.val();
+                if (!value || (value == 'skip:')) {
+                    $this.addClass('error');
+                    valid = false;
+                }
+            });
+            if (!valid) {
+                var $target = this.form.find('.value.js-required :input.error:first');
+
+                $('html, body').animate({
+                    scrollTop: $target.offset().top - 10
+                }, 1000, function () {
+                    $target.focus();
+                });
+                this.form.find(':input, :submit').attr('disabled', null);
+                return false;
+            }
+
+            this.progress = true;
+
+            var data = this.form.serialize();
+            this.form.find('.errormsg').text('');
+            this.form.find(':input').attr('disabled', true);
+            this.form.find('a.js-action:visible').data('visible', 1).hide();
+            this.form.find(':submit').hide();
+            this.form.find('.progressbar .progressbar-inner').css('width', '0%');
+            this.form.find('.progressbar').show();
+            var url = $(element).attr('action');
+            var self = this;
+            $.ajax({
+                url: url,
+                data: data,
+                dataType: 'json',
+                type: 'post',
+                success: function (response) {
+                    if (response.error) {
+                        self.form.find(':input').attr('disabled', false);
+                        self.form.find(':submit').show();
+                        self.form.find('a.js-action:hidden').each(function () {
+                            var $this = $(this);
+                            if ($this.data('visible')) {
+                                $this.show();
+                                $this.data('visible', null);
+                            }
+                        });
+                        self.form.find('.js-progressbar-container').hide();
+                        self.form.find('.shop-ajax-status-loading').remove();
+                        self.progress = false;
+                        self.form.find('.errormsg').text(response.error);
+                    } else {
+                        self.form.find('.progressbar').attr('title', '0.00%');
+                        self.form.find('.progressbar-description').text('0.00%');
+                        self.form.find('.js-progressbar-container').show();
+
+                        self.ajax_pull[response.processId] = [];
+                        self.ajax_pull[response.processId].push(setTimeout(function () {
+                            $.wa.errorHandler = function (xhr) {
+                                return !((xhr.status >= 500) || (xhr.status == 0));
+                            };
+                            self.progressHandler(url, response.processId, response);
+                        }, 2100));
+                        self.ajax_pull[response.processId].push(setTimeout(function () {
+                            self.progressHandler(url, response.processId, null);
+                        }, 5500));
+                    }
+                },
+                error: function () {
+                    self.form.find(':input').attr('disabled', false);
+                    self.form.find('a.js-action:hidden').each(function () {
+                        var $this = $(this);
+                        if ($this.data('visible')) {
+                            $this.show();
+                            $this.data('visible', null);
+                        }
+                    });
+                    self.form.find(':submit').show();
+                    self.form.find('.js-progressbar-container').hide();
+                    self.form.find('.shop-ajax-status-loading').remove();
+                    self.form.find('.progressbar').hide();
+                }
+            });
+            return false;
+        },
+        onDone: function (url, processId, response) {
+
+        },
+        progressHandler: function (url, processId, response) {
+            // display progress
+            // if not completed do next iteration
+            var self = $.importexport.plugins.updateproducts;
+            var $bar;
+            if (response && response.ready) {
+                $.wa.errorHandler = null;
+                var timer;
+                while (timer = self.ajax_pull[processId].pop()) {
+                    if (timer) {
+                        clearTimeout(timer);
+                    }
+                }
+                $bar = self.form.find('.progressbar .progressbar-inner');
+                $bar.css({
+                    'width': '100%'
+                });
+                $.shop.trace('cleanup', response.processId);
+
+
                 $.ajax({
-                    type: 'POST',
-                    url: '?plugin=updateproducts&action=delete',
+                    url: url,
                     data: {
-                        template_name: template_name
+                        'processId': response.processId,
+                        'cleanup': 1
                     },
                     dataType: 'json',
-                    success: function(data, textStatus, jqXHR) {
-                        $('.loading-template').hide();
-                        selected.remove();
-                        $('.templates-list').change();
-                    },
-                    error: function(jqXHR, errorText) {
-
+                    type: 'post',
+                    success: function (response) {
+                        $.shop.trace('report', response);
+                        $("#plugin-updateproducts-submit").hide();
+                        self.form.find('.progressbar').hide();
+                        var $report = $("#plugin-updateproducts-report");
+                        $report.show();
+                        if (response.report) {
+                            $report.find(".value:first").html(response.report);
+                        }
+                        $.storage.del('shop/hash');
                     }
                 });
-                return false;
-            });
-        },
-        templatesListChange: function() {
-            $('.templates-list').change(function() {
-                var template_name = $(this).find('option:selected').text();
-                var template = templates[template_name];
-                $('input[type="checkbox"]').attr('checked', false);
-                for (var key in template) {
-                    var val = template[key];
-                    $('[name="shop_updateproducts[' + key + ']"]').val(val);
-                    $('[name="shop_updateproducts[' + key + ']"][type="checkbox"]').attr('checked', true);
+
+            } else if (response && response.error) {
+
+                self.form.find(':input').attr('disabled', false);
+                self.form.find(':submit').show();
+                self.form.find('.js-progressbar-container').hide();
+                self.form.find('.shop-ajax-status-loading').remove();
+                self.form.find('.progressbar').hide();
+                self.form.find('.errormsg').text(response.error);
+
+            } else {
+                var $description;
+                if (response && (typeof (response.progress) != 'undefined')) {
+                    $bar = self.form.find('.progressbar .progressbar-inner');
+                    var progress = parseFloat(response.progress.replace(/,/, '.'));
+                    $bar.animate({
+                        'width': progress + '%'
+                    });
+                    self.debug.memory = Math.max(0.0, self.debug.memory, parseFloat(response.memory) || 0);
+                    self.debug.memory_avg = Math.max(0.0, self.debug.memory_avg, parseFloat(response.memory_avg) || 0);
+
+                    var title = 'Memory usage: ' + self.debug.memory_avg + '/' + self.debug.memory + 'MB';
+                    title += ' (' + (1 + response.stage_num) + '/' + (parseInt(response.stage_count)) + ')';
+
+                    var message = response.progress + ' — ' + response.stage_name;
+
+                    $bar.parents('.progressbar').attr('title', response.progress);
+                    $description = self.form.find('.progressbar-description');
+                    $description.text(message);
+                    $description.attr('title', title);
                 }
-            });
-            $('.templates-list').change();
-        },
-        showErrors: function(container, errors) {
-            if (Array.isArray(errors)) {
-                $(container).html('');
-                for (var i in errors) {
-                    $(container).append('<div class="error">' + errors[i] + '</div>');
+                if (response && (typeof (response.warning) != 'undefined')) {
+                    $description = self.form.find('.progressbar-description');
+                    $description.append('<i class="icon16 exclamation"></i><p>' + response.warning + '</p>');
                 }
-            } else if (typeof errors == 'string') {
-                $(container).html('<div class="error">' + errors + '</div>');
+
+                var ajax_url = url;
+                var id = processId;
+
+                self.ajax_pull[id].push(setTimeout(function () {
+                    $.ajax({
+                        url: ajax_url,
+                        data: {
+                            'processId': id
+                        },
+                        dataType: 'json',
+                        type: 'post',
+                        success: function (response) {
+                            self.progressHandler(url, response ? response.processId || id : id, response);
+                        },
+                        error: function () {
+                            self.progressHandler(url, id, null);
+                        }
+                    });
+                }, 2000));
+            }
+        },
+        getLink: function () {
+            window.location.reload();
+
+        },
+        helpers: {
+            /**
+             * Compile jquery templates
+             *
+             * @param {String=} selector optional selector of template container
+             */
+            compileTemplates: function (selector) {
+                var pattern = /<\\\/(\w+)/g;
+                var replace = '</$1';
+
+                $(selector || '*').find("script[type$='x-jquery-tmpl']").each(function () {
+                    var id = $(this).attr('id').replace(/-template-js$/, '');
+                    var template = $(this).html().replace(pattern, replace);
+                    try {
+                        $.template(id, template);
+                        $.shop && $.shop.trace('$.importexport.plugins.helper.compileTemplates', [selector, id]);
+                    } catch (e) {
+                        (($.shop && $.shop.error) || console.log)('compile template ' + id + ' at ' + selector + ' (' + e.message + ')', template);
+                    }
+                });
             }
         }
-    };
-
-})(jQuery);
+    }
+});

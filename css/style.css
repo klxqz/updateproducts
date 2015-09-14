@@ -48,3 +48,17 @@
 .column-feature{
     display: none;
 }
+
+.plugin-menu{
+    float: right;
+    list-style: none;
+    margin-right: 15px;
+}
+
+.plugin-menu li{
+    float: left;
+    margin-left: 10px;
+}
+.plugin-menu li a{
+    text-decoration: underline;
+}
