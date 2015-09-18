@@ -27,7 +27,7 @@
                     <div class="field js-profile-description">
                         <div class="name">Команда для запуска через CRON</div>
                         <div class="value">
-                            <input type="text" value="{$cron_str|default:''|escape}">
+                            <input type="text" readonly="readonly" value="{$cron_str|default:''|escape}">
                             <p class="hint">Команда для запуска обновления товаров по рассписанию, через планировщик задач CRON</p>
                         </div>
 
@@ -132,6 +132,23 @@
                             <p class="hint">Укажите типы товаров, которые будут участвовать в обновление</p>
                         </div>
                     </div>
+                    
+                    <div class="field">
+                        <div class="name">
+                            Списки товаров
+                        </div>
+                        <div class="value">
+                            {foreach $sets as $key => $set}
+                                <div>
+                                    {$field = "sets_`$key`"}
+                                    <input type="checkbox" name="settings[sets_{$key}]" value="1" {if !empty($profile.config[$field])}checked="checked"{/if} /> - {$set.name}
+                                </div>
+                            {/foreach}
+                            <p class="hint">Укажите списки товаров, которые будут участвовать в обновление</p>
+                        </div>
+                    </div>
+                    
+                    
                     <div class="field">
                         <div class="name">
                             Склад
@@ -233,7 +250,7 @@
 
                 <div class="field-group" id="plugin-updateproducts-submit">
                     <div class="submit">
-                        <input type="submit" class="button green" value="Сохранить">
+                        <input type="submit" id="save_data" class="button green" value="Сохранить">
 
                         <input type="submit" class="button green" value="Обновить">
                         <br><br>
@@ -257,6 +274,7 @@
                         </div>
                         <br><br>
                         <em class="errormsg"></em>
+                        <div id="response_save" style="display:none;"></div>
                     </div>
                 </div>
 
@@ -265,7 +283,7 @@
                         <div class="value"></div>
                         <div class="value">
                             <br>
-                            <a href="?module=updateproducts&action=download&profile={$profile.id|default:''}" class="bold nowrap"><i class="icon16 download"></i>[`Download`]</a>
+                            <a href="?plugin=updateproducts&module=download&profile={$profile.id|default:''}" class="bold nowrap"><i class="icon16 download"></i>[`Download`]</a>
                         </div>
                     </div>
                 </div>

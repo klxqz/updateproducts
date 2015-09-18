@@ -17,6 +17,7 @@ $.extend($.importexport.plugins, {
             $.extend(this.data, data);
             this.uploadInit();
             this.uploadByUrlInit();
+            this.saveInit();
         },
         hashAction: function (hash) {
             $.importexport.products.action(hash);
@@ -57,6 +58,42 @@ $.extend($.importexport.plugins, {
                 });
                 return false;
             });
+            
+        },
+        saveInit: function () {
+            
+            var upload = $('.fileupload:first').closest('div.field');
+            $('#save_data').click(function () {
+                var self = $(this);
+                var $form = $('#s-plugin-updateproducts');
+                $('#response_save').show();
+                $('#response_save').html('<span id="image-upload-loading"><i class="icon16 loading"></i>Сохранение...</span>');
+                $.ajax({
+                    type: 'POST',
+                    url:  "?plugin=updateproducts&module=save",
+                    data: $form.serializeArray(),
+                    dataType: 'json',
+                    success: function (data, textStatus, jqXHR) {
+                        
+                        console.log(data);
+                        $('#image-upload-loading').hide();
+
+                        if (data.status == 'ok') {
+                            $('#response_save').html('<i class="icon16 yes"></i>Сохранено');
+                            $('.js-fileupload-progress').append(data.data.html);
+                        } else {
+                            $('#response_save').html('<i class="icon16 no"></i>' + data.errors.join(', '));
+                        }
+                        $('#response_save').show();
+                        setTimeout(function() { $('#response_save').hide(); }, 3000);
+                    },
+                    error: function (jqXHR, errorText) {
+                        $('.errormsg').html('<i class="icon16 no"></i>' + jqXHR.responseText);
+                    }
+                });
+                return false;
+            });
+            
         },
         uploadInit: function () {
 

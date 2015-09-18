@@ -91,7 +91,7 @@ class shopUpdateproductsPluginUploadController extends waJsonController {
             $inputFileType = PHPExcel_IOFactory::identify($filepath);
             $objReader = PHPExcel_IOFactory::createReader($inputFileType);
             $objPHPExcel = $objReader->load($filepath);
-            if(!$list_num){
+            if (!$list_num) {
                 throw new waException('Ошибка. Указан неверный «Номер листа». ');
             }
             try {
@@ -125,7 +125,14 @@ class shopUpdateproductsPluginUploadController extends waJsonController {
                     $val = '';
 
                     try {
-                        $val = $sheet->getCell($column['num'] . $i);
+                        if (is_numeric($column['num'])) {
+                            $val = trim($sheet->getCellByColumnAndRow($column['num'] - 1, $i)->getValue());
+                        } else {
+                            $cell = $column['num'] . $i;
+                            $val = trim($sheet->getCell($cell)->getValue());
+                        }
+
+                        //$val = $sheet->getCell($column['num'] . $i);
                         //$val = $sheet->getCellByColumnAndRow($column['num'] - 1, $i)->getValue();
                     } catch (Exception $ex) {
                         

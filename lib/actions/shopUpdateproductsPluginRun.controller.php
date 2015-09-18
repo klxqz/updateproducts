@@ -214,6 +214,7 @@ class shopUpdateproductsPluginRunController extends waLongActionController {
             $stock_id = $profile_config['stock_id'];
             $currency = $profile_config['currency'];
             $types = $this->parseData('types_', $profile_config);
+            $sets = $this->parseData('sets_', $profile_config);
 
             $keysData = $this->parseData('keys_', $profile_config);
             if (!$keysData) {
@@ -274,20 +275,52 @@ class shopUpdateproductsPluginRunController extends waLongActionController {
                 'set_product_status' => $set_product_status,
                 'set_product_null' => $set_product_null,
                 'types' => $types ? array_keys($types) : null,
+                'sets' => $sets ? array_keys($sets) : null,
                 'currency' => $currency,
                 'margin_type' => $margin_type,
                 'margin' => $margin,
             );
 
+            if (!empty($params['sets'])) {
+                $set_product_ids = array();
+                foreach ($params['sets'] as $set_id) {
+                    $set_product_ids = array_merge($set_product_ids, $this->getSetIds($set_id));
+                }
+                $set_product_ids = array_unique($set_product_ids);
+            }
+
             $model = new waModel();
             if ($set_product_status) {
-                $sql = "UPDATE `shop_product` SET `status` = 0";
+                $where = array();
+                if (!empty($params['types'])) {
+                    $where[] = "`type_id` IN (" . implode(',', $params['types']) . ")";
+                }
+                if (!empty($set_product_ids)) {
+                    $where[] = "`product_id` IN (" . implode(',', $set_product_ids) . ")";
+                }
+                $sql = "UPDATE `shop_product` SET `status` = 0" . ($where ? " WHERE " . implode(" AND ", $where) : '');
                 $model->query($sql);
             }
             if ($set_product_null) {
-                $sql = "UPDATE `shop_product` SET `count` = 0";
+                $where = array();
+                if (!empty($params['types'])) {
+                    $where[] = "`type_id` IN (" . implode(',', $params['types']) . ")";
+                }
+                if (!empty($set_product_ids)) {
+                    $where[] = "`product_id` IN (" . implode(',', $set_product_ids) . ")";
+                }
+                $sql = "UPDATE `shop_product` SET `count` = 0" . ($where ? " WHERE " . implode(" AND ", $where) : '');
                 $model->query($sql);
-                $sql = "UPDATE `shop_product_skus` SET `count` = 0";
+
+
+                $where = array();
+                if (!empty($params['types'])) {
+                    $where[] = "`product_id` IN (SELECT `id` FROM `shop_product` WHERE `type_id` IN (" . implode(',', $params['types']) . "))";
+                }
+                if (!empty($set_product_ids)) {
+                    $where[] = "`product_id` IN (" . implode(',', $set_product_ids) . ")";
+                }
+                $sql = "UPDATE `shop_product_skus` SET `count` = 0" . ($where ? " WHERE " . implode(" AND ", $where) : '');
                 $model->query($sql);
             }
 
@@ -340,11 +373,12 @@ class shopUpdateproductsPluginRunController extends waLongActionController {
         $stock_id = $params['stock_id'];
         $set_product_status = $params['set_product_status'];
         $types = $params['types'];
+        $sets = $params['sets'];
         $currency = $params['currency'];
         $margin = $params['margin'];
         $margin_type = $params['margin_type'];
 
-        $skus = $this->getSkuByFields($columns, $keys, $types);
+        $skus = $this->getSkuByFields($columns, $keys, $types, $sets);
 
         if (!empty($skus)) {
             foreach ($skus as $sku) {
@@ -385,7 +419,9 @@ class shopUpdateproductsPluginRunController extends waLongActionController {
                     $data['status'] = $this->inStock($data['skus']) ? 1 : 0;
                 }
                 $product->save($data, true);
-                waLog::log("\"" . $product->name . "\" обновлен", 'updateproduct.log');
+                if ($this->isDebug()) {
+                    waLog::log("\"" . $product->name . "\" обновлен", 'updateproduct.log');
+                }
                 $this->data['updated'] ++;
             }
         } else {
@@ -403,16 +439,24 @@ class shopUpdateproductsPluginRunController extends waLongActionController {
                 fputcsv($f, $not_found_file, ';', '"');
                 fclose($f);
             }
+            if ($this->isDebug()) {
+                waLog::log("\"" . implode(';', $not_found_file) . "\" не найден", 'updateproduct.log');
+            }
             $this->data['not_found'] ++;
         }
 
         $this->data['offset'] ++;
     }
 
-    protected function getSkuByFields($columns, $keys, $types = null) {
+    protected function getSetIds($set_id) {
+        $collection = new shopProductsCollection('set/' . $set_id);
+        $products = $collection->getProducts('*', 0, null, true);
+        return array_keys($products);
+    }
+
+    protected function getSkuByFields($columns, $keys, $types = null, $sets = null) {
         $model = new waModel();
         $where = array();
-
 
         foreach ($keys as $id => $key) {
             $value = $this->getDataValue($id, $columns);
@@ -421,19 +465,32 @@ class shopUpdateproductsPluginRunController extends waLongActionController {
                 $where[] = $condition;
             }
         }
-
-        waLog::log("Where " . implode(' AND ', $where), 'updateproduct.log');
+        if ($this->isDebug()) {
+            waLog::log("Where " . implode(' AND ', $where), 'updateproduct.log');
+        }
 
         $result = array();
         if ($where) {
+            if ($sets) {
+                $set_product_ids = array();
+                foreach ($sets as $set_id) {
+                    $set_product_ids = array_merge($set_product_ids, $this->getSetIds($set_id));
+                }
+                $set_product_ids = array_unique($set_product_ids);
+                if ($set_product_ids) {
+                    $where[] = "`shop_product_skus`.`product_id` IN (" . implode(',', $set_product_ids) . ")";
+                }
+            }
             $sql = "SELECT `shop_product_skus`.*
                 FROM `shop_product_skus`
                 " . ($types ? "LEFT JOIN `shop_product` ON `shop_product_skus`.`product_id` = `shop_product`.`id`" : "") . " 
                 WHERE " . ($types ? "`shop_product`.`type_id` IN (" . implode(',', $types) . ") AND " : "") . " " . implode(' AND ', $where) . " LIMIT 1";
 
             $result = $model->query($sql)->fetchAll();
-            waLog::log("SQL " . $sql, 'updateproduct.log');
-            waLog::log("Count Products: " . count($result), 'updateproduct.log');
+            if ($this->isDebug()) {
+                waLog::log("SQL " . $sql, 'updateproduct.log');
+                waLog::log("Count Products: " . count($result), 'updateproduct.log');
+            }
         }
 
 
@@ -447,10 +504,15 @@ class shopUpdateproductsPluginRunController extends waLongActionController {
         $column = $columns[$id];
 
         $iteration = $row_num + $this->data['offset'];
-        $cell = $column['num'] . $iteration;
+
         $value = null;
         try {
-            $value = trim($this->sheet->getCell($cell)->getValue());
+            if (is_numeric($column['num'])) {
+                $value = trim($this->sheet->getCellByColumnAndRow($column['num'] - 1, $iteration)->getValue());
+            } else {
+                $cell = $column['num'] . $iteration;
+                $value = trim($this->sheet->getCell($cell)->getValue());
+            }
         } catch (Exception $ex) {
             
         }

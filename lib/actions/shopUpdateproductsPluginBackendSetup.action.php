@@ -13,7 +13,7 @@ class shopUpdateproductsPluginBackendSetupAction extends waViewAction {
     );
 
     public function execute() {
-        
+
         $routing = wa()->getRouting();
 
         $profile_helper = new shopImportexportHelper($this->plugin_id);
@@ -29,50 +29,14 @@ class shopUpdateproductsPluginBackendSetupAction extends waViewAction {
 
 
         $this->view->assign('current_domain', $current_domain);
-
-
         $this->view->assign('profile', $profile);
-
-
-        $profile_map = ifset($profile['config']['map'], array());
-        $export = ifset($profile['config']['export'], array());
-        $set_model = new shopSetModel();
-        $map = array(); //$this->plugin()->map(array(), null, true);
-
-
-        $params = array();
-        if ($profile_map) {
-            foreach ($map as $type => &$type_map) {
-                foreach ($type_map['fields'] as $field => &$info) {
-                    $info['source'] = ifempty($profile_map[$type][$field], 'skip:');
-                    unset($profile_map[$type][$field]);
-                    unset($info);
-                }
-                if (!empty($type_map['fields']['param.*'])) {
-                    $params[$type] = -1;
-                }
-                unset($type_map);
-            }
-            foreach ($profile_map as $type => $fields) {
-                foreach ($fields as $field => $source) {
-                    $info_field = (strpos($field, 'param.') === 0) ? 'param.*' : $field;
-                    if (isset($map[$type]['fields'][$info_field])) {
-                        $info = $map[$type]['fields'][$info_field];
-                        $info['source'] = ifempty($source, 'skip:');
-
-                        $map[$type]['fields'][$field] = $info;
-                        $params[$type] = max(ifset($params[$type], -1), intval(preg_replace('@\D+@', '', $field)));
-                    }
-                }
-            }
-        }
 
         $stock_model = new shopStockModel();
         $stocks = $stock_model->getAll();
         $this->view->assign('stocks', $stocks);
 
 
-
+        $params = array();
         $this->view->assign('params', array('params' => $params));
 
 
@@ -81,6 +45,9 @@ class shopUpdateproductsPluginBackendSetupAction extends waViewAction {
         $type_model = new shopTypeModel();
         $product_types = $type_model->getAll($type_model->getTableId(), true);
         $this->view->assign('product_types', $product_types);
+
+        $set_model = new shopSetModel();
+        $this->view->assign('sets', $set_model->getAll($set_model->getTableId(), true));
 
         $cron_str = 'php ' . wa()->getConfig()->getRootPath() . '/cli.php shop UpdateproductsPluginRun profile_id=' . $profile['id'];
 
