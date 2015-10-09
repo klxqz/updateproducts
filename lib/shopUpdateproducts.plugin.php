@@ -45,4 +45,51 @@ class shopUpdateproductsPlugin extends shopPlugin {
         return ifset($uuid[$profile]);
     }
 
+    private static function uploadFile($filepath, $url) {
+        if (empty($url)) {
+            throw new waException(_wp('Empty URL for YML'));
+        } else {
+            try {
+                waFiles::upload($url, $filepath);
+            } catch (waException $ex) {
+                throw new waException(sprintf('Ошибка загрузки файла: %s', $ex->getMessage()));
+            }
+        }
+
+        return true;
+    }
+
+    public static function getFilePath($profile_id, $profile_config) {
+        $file = waRequest::file('files');
+        $filepath = wa()->getCachePath('plugins/updateproducts/profile' . $profile_id . '/upload_file', 'shop');
+
+        if (!file_exists($filepath) && empty($profile_config['file_url']) && !$file->uploaded()) {
+            throw new waException('Загрузите файл или укажите ссылку для скачивания');
+        }
+
+        if ($profile_config['file_url']) {
+            self::uploadFile($filepath, $profile_config['file_url']);
+        } elseif ($file->uploaded()) {
+            $file->moveTo($filepath);
+        }
+       
+        if (!empty($profile_config['archive']) && $profile_config['archive'] == 'zip') {
+            $autoload = waAutoload::getInstance();
+            $autoload->add('PclZip', "wa-apps/shop/plugins/updateproducts/lib/vendors/pclzip/pclzip.lib.php");
+            $archive = new PclZip($filepath);
+
+            $result = $archive->extract(PCLZIP_OPT_PATH, dirname($filepath) . '/zip/');
+            if ($result == 0) {
+                throw new waException($archive->errorInfo(true));
+            }
+            $result = $archive->listContent();
+            if ($result == 0) {
+                throw new waException($archive->errorInfo(true));
+            }
+            $archive_file = reset($result);
+            $filepath = dirname($filepath) . '/zip/' . $archive_file['filename'];
+        }
+        return $filepath;
+    }
+
 }

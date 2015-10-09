@@ -15,6 +15,7 @@ $.extend($.importexport.plugins, {
         init: function (data) {
             this.$form = $("#s-plugin-updateproducts");
             $.extend(this.data, data);
+            this.buttonInit();
             this.uploadInit();
             this.uploadByUrlInit();
             this.saveInit();
@@ -28,6 +29,55 @@ $.extend($.importexport.plugins, {
         },
         blur: function () {
 
+        },
+        buttonInit: function () {
+            $('.select-all-features').change(function () {
+                if ($(this).is(':checked')) {
+                    $(this).parent().find('div input[type=checkbox]').attr('checked', 'checked');
+                } else {
+                    $(this).parent().find('div input[type=checkbox]').removeAttr('checked');
+                }
+                return false;
+            });
+            $('.features-show-all').click(function () {
+                if ($(this).hasClass('active')) {
+                    $(this).text('Показать все...').removeClass('active').nextAll('div').addClass('hidden-feature');
+                } else {
+                    $(this).text('Скрыть...').addClass('active').nextAll('div').removeClass('hidden-feature');
+                }
+                return false;
+            });
+            $(document).on('click', '.delete-replace-count-row-button', function () {
+                $(this).closest('tr').remove();
+                return false;
+            });
+            $(document).on('change', 'input[name="settings[replace_count_infinity][]"][type=checkbox]', function () {
+                if ($(this).is(':checked')) {
+                    $(this).closest('tr').find('input[name="settings[replace_count_replace][]"][type=text]').attr('disabled', 'disabled');
+                    $(this).closest('tr').find('input[name="settings[replace_count_replace][]"][type=hidden]').val($(this).closest('tr').find('input[name="settings[replace_count_replace][]"][type=text]').val());
+                    $(this).closest('tr').find('input[name="settings[replace_count_replace][]"][type=hidden]').removeAttr('disabled');
+                    $(this).closest('tr').find('input[name="settings[replace_count_infinity][]"][type=hidden]').attr('disabled', 'disabled');
+                } else {
+                    $(this).closest('tr').find('input[name="settings[replace_count_replace][]"][type=text]').removeAttr('disabled');
+                    $(this).closest('tr').find('input[name="settings[replace_count_replace][]"][type=hidden]').attr('disabled', 'disabled');
+                    $(this).closest('tr').find('input[name="settings[replace_count_infinity][]"][type=hidden]').removeAttr('disabled');
+                }
+                return false;
+            });
+
+            $('#add-replace-count-row-button').click(function () {
+                $('#replace-count-row').tmpl().appendTo('#replace-data tbody');
+                return false;
+            });
+
+            $('select[name="settings[rounding]"]').change(function () {
+                if ($(this).val() == 'round') {
+                    $('input[name="settings[round_precision]"]').closest('.field').show();
+                } else {
+                    $('input[name="settings[round_precision]"]').closest('.field').hide();
+                }
+            });
+            $('select[name="settings[rounding]"]').change();
         },
         uploadByUrlInit: function () {
             var upload = $('.fileupload:first').closest('div.field');
@@ -58,10 +108,10 @@ $.extend($.importexport.plugins, {
                 });
                 return false;
             });
-            
+
         },
         saveInit: function () {
-            
+
             var upload = $('.fileupload:first').closest('div.field');
             $('#save_data').click(function () {
                 var self = $(this);
@@ -70,11 +120,11 @@ $.extend($.importexport.plugins, {
                 $('#response_save').html('<span id="image-upload-loading"><i class="icon16 loading"></i>Сохранение...</span>');
                 $.ajax({
                     type: 'POST',
-                    url:  "?plugin=updateproducts&module=save",
+                    url: "?plugin=updateproducts&module=save",
                     data: $form.serializeArray(),
                     dataType: 'json',
                     success: function (data, textStatus, jqXHR) {
-                        
+
                         console.log(data);
                         $('#image-upload-loading').hide();
 
@@ -85,7 +135,9 @@ $.extend($.importexport.plugins, {
                             $('#response_save').html('<i class="icon16 no"></i>' + data.errors.join(', '));
                         }
                         $('#response_save').show();
-                        setTimeout(function() { $('#response_save').hide(); }, 3000);
+                        setTimeout(function () {
+                            $('#response_save').hide();
+                        }, 3000);
                     },
                     error: function (jqXHR, errorText) {
                         $('.errormsg').html('<i class="icon16 no"></i>' + jqXHR.responseText);
@@ -93,7 +145,7 @@ $.extend($.importexport.plugins, {
                 });
                 return false;
             });
-            
+
         },
         uploadInit: function () {
 

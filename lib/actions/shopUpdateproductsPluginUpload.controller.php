@@ -12,46 +12,14 @@ class shopUpdateproductsPluginUploadController extends waJsonController {
         'compare_price' => 'Зачеркнутая цена',
     );
 
-    private function uploadFile($url, $profile_id) {
-        if (empty($url)) {
-            throw new waException(_wp('Empty URL for YML'));
-        } else {
-            $path = wa()->getCachePath('plugins/updateproducts/profile' . $profile_id . '/file.xls', 'shop');
-            try {
-                waFiles::upload($url, $path);
-            } catch (waException $ex) {
-                $this->log($ex->getMessage(), self::LOG_ERROR, compact('url', 'path'));
-                throw new waException(sprintf(_wp('Error while upload YML file: %s'), $ex->getMessage()));
-            }
-        }
-
-        return $path;
-    }
-
     public function execute() {
-
-
         try {
             $profile_helper = new shopImportexportHelper($this->plugin_id);
             $profile_config = (array) waRequest::post('settings', array());
             $profile_id = $profile_helper->setConfig($profile_config);
 
 
-            $file = waRequest::file('files');
-
-            if (empty($profile_config['file_url']) && !$file->uploaded()) {
-                throw new waException('Загрузите файл или укажите ссылку для скачивания');
-            }
-
-            if ($profile_config['file_url']) {
-                $filepath = $this->uploadFile($profile_config['file_url'], $profile_id);
-            } elseif ($file) {
-                $filepath = wa()->getCachePath('plugins/updateproducts/profile' . $profile_id . '/file.xls', 'shop');
-                $file->moveTo($filepath);
-            }
-
-
-
+            $filepath = shopUpdateproductsPlugin::getFilePath($profile_id, $profile_config);
 
             $list_num = intval($profile_config['list_num']);
             $row_num = intval($profile_config['row_num']) > 0 ? intval($profile_config['row_num']) - 1 : 0;
@@ -86,11 +54,10 @@ class shopUpdateproductsPluginUploadController extends waJsonController {
             $autoload->add('PHPExcel', "wa-apps/shop/plugins/updateproducts/lib/vendors/PHPExcel.php");
             $autoload->add('PHPExcel_IOFactory', "wa-apps/shop/plugins/updateproducts/lib/vendors/PHPExcel/IOFactory.php");
 
-
-
             $inputFileType = PHPExcel_IOFactory::identify($filepath);
             $objReader = PHPExcel_IOFactory::createReader($inputFileType);
-            $objPHPExcel = $objReader->load($filepath);
+            $objPHPExcel = @$objReader->load($filepath);
+
             if (!$list_num) {
                 throw new waException('Ошибка. Указан неверный «Номер листа». ');
             }
@@ -123,7 +90,6 @@ class shopUpdateproductsPluginUploadController extends waJsonController {
                 $html .='<tr>';
                 foreach ($columns as $key => $column) {
                     $val = '';
-
                     try {
                         if (is_numeric($column['num'])) {
                             $val = trim($sheet->getCellByColumnAndRow($column['num'] - 1, $i)->getValue());
@@ -131,9 +97,6 @@ class shopUpdateproductsPluginUploadController extends waJsonController {
                             $cell = $column['num'] . $i;
                             $val = trim($sheet->getCell($cell)->getValue());
                         }
-
-                        //$val = $sheet->getCell($column['num'] . $i);
-                        //$val = $sheet->getCellByColumnAndRow($column['num'] - 1, $i)->getValue();
                     } catch (Exception $ex) {
                         
                     }

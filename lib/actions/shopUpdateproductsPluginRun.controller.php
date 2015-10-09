@@ -82,8 +82,21 @@ class shopUpdateproductsPluginRunController extends waLongActionController {
             $report .= ' ' . sprintf(_w('(total time: %s)'), $interval);
         }
         $report .= '&nbsp;</div>';
-        $not_found_file = wa()->getDataUrl('plugins/updateproducts/not_found_file.csv', true, 'shop');
-        $report .= '<a href="' . $not_found_file . '">Ненайденные товары</a>';
+
+        $params = $this->data['params'];
+        if (!empty($params['report']) && !empty($params['report_email'])) {
+            $subject = 'Обновление товаров';
+            $body = 'Обновление завершено';
+            $to = explode(',', $params['report_email']);
+            $message = new waMailMessage($subject, $body);
+            $general = wa('shop')->getConfig()->getGeneralSettings();
+            $message->setFrom($general['email'], $general['name']);
+            $file = wa()->getTempPath('plugins/updateproducts/download/' . $params['profile_id'] . '/not_found_file.csv');
+            $message->addAttachment($file);
+            $message->setTo($to);
+            $message->send();
+        }
+
         return $report;
     }
 
@@ -199,7 +212,7 @@ class shopUpdateproductsPluginRunController extends waLongActionController {
                 $options = $profile_config;
             }
 
-            $filepath = wa()->getCachePath('plugins/updateproducts/profile' . $profile_id . '/file.xls', 'shop');
+            $filepath = shopUpdateproductsPlugin::getFilePath($profile_id, $profile_config);
             if (!file_exists($filepath)) {
                 throw new waException('Ошибка загрузки файла');
             }
@@ -215,6 +228,7 @@ class shopUpdateproductsPluginRunController extends waLongActionController {
             $currency = $profile_config['currency'];
             $types = $this->parseData('types_', $profile_config);
             $sets = $this->parseData('sets_', $profile_config);
+            $features = $this->parseData('features_', $profile_config);
 
             $keysData = $this->parseData('keys_', $profile_config);
             if (!$keysData) {
@@ -276,9 +290,18 @@ class shopUpdateproductsPluginRunController extends waLongActionController {
                 'set_product_null' => $set_product_null,
                 'types' => $types ? array_keys($types) : null,
                 'sets' => $sets ? array_keys($sets) : null,
+                'features' => $features ? $features : null,
                 'currency' => $currency,
                 'margin_type' => $margin_type,
                 'margin' => $margin,
+                'rounding' => $profile_config['rounding'],
+                'round_precision' => $profile_config['round_precision'],
+                'replace_count_search' => $profile_config['replace_count_search'],
+                'replace_count_replace' => $profile_config['replace_count_replace'],
+                'replace_count_infinity' => $profile_config['replace_count_infinity'],
+                'report' => $profile_config['report'],
+                'report_email' => $profile_config['report_email'],
+                'profile_id' => $profile_id,
             );
 
             if (!empty($params['sets'])) {
@@ -342,13 +365,11 @@ class shopUpdateproductsPluginRunController extends waLongActionController {
             $this->data['memory'] = memory_get_peak_usage();
             $this->data['memory_avg'] = memory_get_usage();
 
-
             $key_names = array();
             foreach ($keys as $key) {
                 $key_names[] = iconv('UTF-8', 'CP1251', $key['name']);
             }
-
-            $this->data['not_found_file'] = wa()->getDataPath('plugins/updateproducts/not_found_file.csv', true, 'shop');
+            $this->data['not_found_file'] = wa()->getTempPath('plugins/updateproducts/download/' . $profile_id . '/not_found_file.csv');
             $f = fopen($this->data['not_found_file'], 'w+');
             fputcsv($f, $key_names, ';', '"');
             fclose($f);
@@ -358,72 +379,101 @@ class shopUpdateproductsPluginRunController extends waLongActionController {
         }
     }
 
-    //protected function getSheet
-
     public function updateProducts() {
-
         $model_sku = new shopProductSkusModel();
         $params = $this->data['params'];
 
         $columns = $params['columns'];
         $keys = $params['keys'];
         $update = $params['update'];
-        $row_num = $params['row_num'];
-        $row_count = $params['row_count'];
         $stock_id = $params['stock_id'];
         $set_product_status = $params['set_product_status'];
-        $types = $params['types'];
-        $sets = $params['sets'];
         $currency = $params['currency'];
         $margin = $params['margin'];
         $margin_type = $params['margin_type'];
+        $replace_count_search = !empty($params['replace_count_search']) ? $params['replace_count_search'] : array();
+        $replace_count_replace = !empty($params['replace_count_replace']) ? $params['replace_count_replace'] : array();
+        $replace_count_infinity = !empty($params['replace_count_infinity']) ? $params['replace_count_infinity'] : array();
 
-        $skus = $this->getSkuByFields($columns, $keys, $types, $sets);
+        $options = array(
+            'types' => $params['types'],
+            'sets' => $params['sets'],
+            'features' => $params['features'],
+        );
 
-        if (!empty($skus)) {
-            foreach ($skus as $sku) {
-                $product = new shopProduct($sku['product_id']);
-                $sku_id = $sku['id'];
-                $update_data = array();
+        $sku = $this->getSkuByFields($columns, $keys, $options);
 
-                foreach ($update as $id => $item) {
+        if (!empty($sku)) {
+            $product = new shopProduct($sku['product_id']);
+        }
 
-                    $field = $item['field'];
-                    $value = $this->getDataValue($id, $columns);
+        if (!empty($product) && $product->id) {
+            $sku_id = $sku['id'];
+            $update_data = array();
 
-                    if ($currency && ($field == 'price' || $field == 'purchase_price' || $field == 'compare_price')) {
+            foreach ($update as $id => $item) {
+                $field = $item['field'];
+                $value = $this->getDataValue($id, $columns);
+
+                if ($field == 'price' || $field == 'purchase_price' || $field == 'compare_price') {
+                    $value = str_replace(' ', '', $value);
+                    $value = str_replace(',', '.', $value);
+                    if ($currency) {
                         $value = shop_currency($value, $currency, $product->currency, false);
                     }
-                    if ($field == 'price') {
-                        if ($margin_type == 'percent') {
-                            $value += round($value * $margin / 100.00);
-                        } else {
-                            $value += $margin;
+                }
+                if ($field == 'price') {
+                    if ($margin_type == 'percent') {
+                        $value += round($value * $margin / 100.00);
+                    } else {
+                        $value += $margin;
+                    }
+                }
+
+                if (!empty($params['rounding']) && ($field == 'price' || $field == 'purchase_price' || $field == 'compare_price')) {
+                    switch ($params['rounding']) {
+                        case 'round':
+                            $value = round($value, $params['round_precision']);
+                            break;
+                        case 'ceil':
+                            $value = ceil($value);
+                            break;
+                        case 'floor':
+                            $value = floor($value);
+                            break;
+                    }
+                }
+
+                if ($field == 'stock') {
+                    foreach ($replace_count_search as $replace_id => $replace_search) {
+                        if (strpos($value, $replace_search) !== false) {
+                            if ($replace_count_infinity[$replace_id]) {
+                                $value = null;
+                            } else {
+                                $value = str_replace($replace_search, $replace_count_replace[$replace_id], $value);
+                            }
                         }
                     }
-
-                    if ($field == 'stock') {
-                        $update_data[$field] = $this->getStocks($sku_id);
-                        $update_data[$field][$stock_id] = ($value !== false ? $value : 0);
-                    } else {
-                        $update_data[$field] = ($value !== false ? $value : null);
-                    }
+                    $update_data[$field] = $this->getStocks($sku_id);
+                    $update_data[$field][$stock_id] = $value;
+                } else {
+                    $update_data[$field] = $value;
                 }
-
-                $product_model = new shopProductModel();
-                $data = $product_model->getById($sku['product_id']);
-                $data['skus'] = $model_sku->getDataByProductId($sku['product_id'], true);
-                $data['skus'] = $this->prepareSkus($data['skus']);
-                $data['skus'][$sku_id] = array_merge($data['skus'][$sku_id], $update_data);
-                if ($set_product_status) {
-                    $data['status'] = $this->inStock($data['skus']) ? 1 : 0;
-                }
-                $product->save($data, true);
-                if ($this->isDebug()) {
-                    waLog::log("\"" . $product->name . "\" обновлен", 'updateproduct.log');
-                }
-                $this->data['updated'] ++;
             }
+
+            $product_model = new shopProductModel();
+            $data = $product_model->getById($sku['product_id']);
+            $data['skus'] = $model_sku->getDataByProductId($sku['product_id'], true);
+            $data['skus'] = $this->prepareSkus($data['skus']);
+            $data['skus'][$sku_id] = array_merge($data['skus'][$sku_id], $update_data);
+            if ($set_product_status) {
+                $data['status'] = $this->inStock($data['skus']) ? 1 : 0;
+            }
+            $product->save($data, true);
+            if ($this->isDebug()) {
+                waLog::log("\"" . $product->name . "\" обновлен", 'updateproduct.log');
+            }
+            $this->data['updated'] ++;
         } else {
             $not_found_file = array();
             foreach ($keys as $id => $key) {
@@ -454,7 +504,11 @@ class shopUpdateproductsPluginRunController extends waLongActionController {
         return array_keys($products);
     }
 
-    protected function getSkuByFields($columns, $keys, $types = null, $sets = null) {
+    protected function getSkuByFields($columns, $keys, $options = null) {
+        $types = !empty($options['types']) ? $options['types'] : null;
+        $sets = !empty($options['sets']) ? $options['sets'] : null;
+        $features = !empty($options['features']) ? $options['features'] : null;
+
         $model = new waModel();
         $where = array();
 
@@ -481,19 +535,33 @@ class shopUpdateproductsPluginRunController extends waLongActionController {
                     $where[] = "`shop_product_skus`.`product_id` IN (" . implode(',', $set_product_ids) . ")";
                 }
             }
+            if ($types) {
+                $where[] = "`shop_product_skus`.`product_id` IN (
+                                SELECT `id` FROM `shop_product` 
+                                WHERE `shop_product`.`type_id` IN (" . implode(',', $types) . ")
+                            )";
+            }
+
+            if ($features) {
+                foreach ($features as $feature_id => $values) {
+                    $where[] = "`shop_product_skus`.`product_id` IN (
+                                    SELECT `product_id`
+                                    FROM `shop_product_features`
+                                    WHERE  `feature_id` = '" . $feature_id . "' AND `feature_value_id` IN (" . implode(',', $values) . ")
+                            )";
+                }
+            }
             $sql = "SELECT `shop_product_skus`.*
                 FROM `shop_product_skus`
-                " . ($types ? "LEFT JOIN `shop_product` ON `shop_product_skus`.`product_id` = `shop_product`.`id`" : "") . " 
-                WHERE " . ($types ? "`shop_product`.`type_id` IN (" . implode(',', $types) . ") AND " : "") . " " . implode(' AND ', $where) . " LIMIT 1";
+                WHERE " . implode(' AND ', $where) . " LIMIT 1";
 
-            $result = $model->query($sql)->fetchAll();
+            $result = $model->query($sql)->fetch();
+            echo $sql;exit;
             if ($this->isDebug()) {
                 waLog::log("SQL " . $sql, 'updateproduct.log');
                 waLog::log("Count Products: " . count($result), 'updateproduct.log');
             }
         }
-
-
 
         return $result;
     }

@@ -39,7 +39,6 @@ class shopUpdateproductsPluginBackendSetupAction extends waViewAction {
         $params = array();
         $this->view->assign('params', array('params' => $params));
 
-
         $this->view->assign('data_columns', $this->data_columns);
 
         $type_model = new shopTypeModel();
@@ -56,6 +55,11 @@ class shopUpdateproductsPluginBackendSetupAction extends waViewAction {
         $model = new shopCurrencyModel();
         $currencies = $model->getCurrencies();
         $this->view->assign('currencies', $currencies);
+
+        $feature_model = new shopFeatureModel();
+        $features = $feature_model->select('`id`,`code`, `name`,`type`')->fetchAll('code', true);
+        $features = $feature_model->getValues($features);
+        $this->view->assign('features', $features);
     }
 
 }
