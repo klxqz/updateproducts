@@ -39,7 +39,15 @@ class shopUpdateproductsPluginBackendSetupAction extends waViewAction {
         $params = array();
         $this->view->assign('params', array('params' => $params));
 
+        $feature_model = new shopFeatureModel();
+        $features = $feature_model->select('`id`,`code`, `name`,`type`')->fetchAll('code', true);
+        $features = $feature_model->getValues($features);
+        foreach ($features as $key => $feature) {
+            $this->data_columns['feature:' . $key] = array('name' => $feature['name'] . '(' . $key . ')', 'key' => true, 'update' => false);
+        }
+
         $this->view->assign('data_columns', $this->data_columns);
+        $this->view->assign('features', $features);
 
         $type_model = new shopTypeModel();
         $product_types = $type_model->getAll($type_model->getTableId(), true);
@@ -56,10 +64,8 @@ class shopUpdateproductsPluginBackendSetupAction extends waViewAction {
         $currencies = $model->getCurrencies();
         $this->view->assign('currencies', $currencies);
 
-        $feature_model = new shopFeatureModel();
-        $features = $feature_model->select('`id`,`code`, `name`,`type`')->fetchAll('code', true);
-        $features = $feature_model->getValues($features);
-        $this->view->assign('features', $features);
+        
+        
     }
 
 }

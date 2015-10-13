@@ -59,20 +59,77 @@ class shopUpdateproductsPlugin extends shopPlugin {
         return true;
     }
 
+    private static function getEmailFile($filepath, $params) {
+        $mail_reader = new waMailPOP3($params);
+        $n = $mail_reader->count();
+        if (!$n || !$n[0]) {
+            throw new waException('Нет новых писем');
+        }
+
+        //for ($i = 1; $i <= $n[0]; $i++) {
+
+            $unique_id = uniqid(true);
+
+            //waLog::log("Start cycle. Iteration step = {$i}", 'updateproduct.log');
+
+            $message = null;
+            $message_id = null;
+            $mail_path = dirname($filepath) . '/' . $unique_id;
+            waFiles::create($mail_path);
+
+            waLog::log("Create path: {$mail_path}", 'updateproduct.log');
+
+            try {
+
+                waLog::log("Try mail reader get mail: {$mail_path}", 'updateproduct.log');
+                // read mail to temporary file
+                $mail_reader->get($n[0], $mail_path . '/mail.eml');
+                waLog::log("Try process eml", 'updateproduct.log');
+                // Process the file
+                $attachments = self::getAttachments($mail_path . '/mail.eml');
+                if ($attachments) {
+                    $attachment = reset($attachments);
+                    waLog::log("Try delete mail path: {$mail_path}", 'updateproduct.log');
+                    return $attachment['file'];
+                }
+            } catch (Exception $e) {
+                throw new waException($e->getMessage());
+            }
+            try {
+                //$mail_reader->delete($i);
+            } catch (Exception $e) {
+                waLog::log('Unable to delete message from mailbox ' . $source->name . ': ' . $e->getMessage(), 'updateproduct.log');
+            }
+        //}
+
+        return false;
+    }
+
     public static function getFilePath($profile_id, $profile_config) {
-        $file = waRequest::file('files');
         $filepath = wa()->getCachePath('plugins/updateproducts/profile' . $profile_id . '/upload_file', 'shop');
-
-        if (!file_exists($filepath) && empty($profile_config['file_url']) && !$file->uploaded()) {
-            throw new waException('Загрузите файл или укажите ссылку для скачивания');
+        switch ($profile_config['upload_type']) {
+            case 'local':
+                $file = waRequest::file('files');
+                if (!file_exists($filepath) && !$file->uploaded()) {
+                    throw new waException('Загрузите файл');
+                }
+                if($file->uploaded()) {
+                    $file->moveTo($filepath);
+                }
+                break;
+            case 'url':
+                if ($profile_config['file_url']) {
+                    self::uploadFile($filepath, $profile_config['file_url']);
+                } else {
+                    throw new waException('Укажите ссылку для скачивания');
+                }
+                break;
+            case 'email':
+                $params = self::parseData('email_', $profile_config);
+                $filepath = self::getEmailFile($filepath, $params);
+                break;
         }
 
-        if ($profile_config['file_url']) {
-            self::uploadFile($filepath, $profile_config['file_url']);
-        } elseif ($file->uploaded()) {
-            $file->moveTo($filepath);
-        }
-       
         if (!empty($profile_config['archive']) && $profile_config['archive'] == 'zip') {
             $autoload = waAutoload::getInstance();
             $autoload->add('PclZip', "wa-apps/shop/plugins/updateproducts/lib/vendors/pclzip/pclzip.lib.php");
@@ -90,6 +147,38 @@ class shopUpdateproductsPlugin extends shopPlugin {
             $filepath = dirname($filepath) . '/zip/' . $archive_file['filename'];
         }
         return $filepath;
+    }
+
+    protected static function parseData($prefix, $array = array()) {
+        $result = array();
+        foreach ($array as $key => $item) {
+            if (preg_match('/' . $prefix . '(.+)/', $key, $match)) {
+                $sub = $match[1];
+                $result[$sub] = $item;
+            }
+        }
+        return $result;
+    }
+
+    public static function getAttachments($eml_file_path) {
+        static $mail_decode = null;
+        if (empty($mail_decode)) {
+            $mail_decode = new waMailDecode();
+        }
+        $mail = $mail_decode->decode($eml_file_path);
+
+        $attachments = array();
+        if (isset($mail['attachments']) && $mail['attachments']) {
+            $mail_path = dirname($eml_file_path);
+            foreach ($mail['attachments'] as $a) {
+                $attachments[] = array(
+                    'file' => $mail_path . '/files/' . $a['file'],
+                    'name' => ifempty($a['name'], $a['file']),
+                    'cid' => ifempty($a['content-id']),
+                );
+            }
+        }
+        return $attachments;
     }
 
 }

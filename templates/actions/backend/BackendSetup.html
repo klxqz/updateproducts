@@ -86,7 +86,7 @@
                             </tr>
                         </tbody>
                         {foreach $data_columns as $key => $column}
-                            <tr>
+                            <tr{if strpos($key, 'feature') !== false} class="column-feature-row"{/if}>
                                 <td>
                                     {$column.name}
                                 </td>
@@ -108,6 +108,12 @@
                                 </td>
                             </tr>
                         {/foreach}
+                        <tr>
+                            <td colspan="4">
+                                {*<a id="hide-column-feature" href="#">Скрыть дополнительные характеристики</a>*}
+                                <a id="hide-show-column-feature" href="#">Показать дополнительные характеристики</a>
+                            </td>
+                        </tr>
                     </table>
                 </div>
 
@@ -262,23 +268,6 @@
                     </div>
                     <div class="field">
                         <div class="name">
-                            Тип наценки
-                        </div>
-                        <div class="value">
-                            <input type="radio" class="short" name="settings[margin_type]" value="percent" checked="checked" />- процентная<br/>
-                            <input type="radio" class="short" name="settings[margin_type]" value="fixed" />- фиксированная
-                        </div>
-                    </div>
-                    <div class="field">
-                        <div class="name">
-                            Наценка
-                        </div>
-                        <div class="value">
-                            <input type="text" class="short" name="settings[margin]" value="{$profile.config.margin|default:0|escape}" />
-                        </div>
-                    </div>
-                    <div class="field">
-                        <div class="name">
                             Округление
                         </div>
                         <div class="value">
@@ -299,6 +288,55 @@
                             <p class="hint">Количество знаков после запятой</p>
                         </div>
                     </div>
+
+                    <div class="field">
+                        <div class="name">
+                            Тип наценки
+                        </div>
+                        <div class="value">
+                            <input type="radio" class="short" name="settings[margin_type]" value="percent" {if $profile.config.margin_type|default:'percent' == 'percent'}checked="checked"{/if} />- процентная<br/>
+                            <input type="radio" class="short" name="settings[margin_type]" value="fixed" {if $profile.config.margin_type|default:'' == 'fixed'}checked="checked"{/if} />- фиксированная
+                            <p class="hint">На основную цену устанавливается наценка. Фиксированная наценка - постоянное число денежных единиц, которые прибавляются к цене, например + 100руб. Процентная наценка - добавляется заданная часть от цены, например 20%</p>
+                        </div>
+                    </div>
+                    <div class="field">
+                        <div class="name">
+                            Наценка
+                        </div>
+                        <div class="value">
+                            <input type="text" class="short" name="settings[margin]" value="{$profile.config.margin|default:0|escape}" />
+                            <p class="hint">Размер наценки</p>
+                        </div>
+                    </div>
+
+                    <div class="field">
+                        <div class="name">
+                            Расчет закупочной цены по основной цене
+                        </div>
+                        <div class="value">
+                            <input type="checkbox" name="settings[calculation_purchase_price]" value="1" {if $profile.config.calculation_purchase_price|default:0}checked="checked"{/if} />
+                             <p class="hint">Закупочная цена вычисляется по основной цене путем добавления наценки(установки скидки)</p>
+                        </div>
+                    </div>
+                    <div class="field calculation-purchase-price-field">
+                        <div class="name">
+                            Тип наценки
+                        </div>
+                        <div class="value">
+                            <input type="radio" class="short" name="settings[purchase_margin_type]" value="percent" {if $profile.config.purchase_margin_type|default:'percent' == 'percent'}checked="checked"{/if} />- процентная<br/>
+                            <input type="radio" class="short" name="settings[purchase_margin_type]" value="fixed" {if $profile.config.purchase_margin_type|default:'percent' == 'fixed'}checked="checked"{/if} />- фиксированная
+                        </div>
+                    </div>
+                    <div class="field calculation-purchase-price-field">
+                        <div class="name">
+                            Наценка
+                        </div>
+                        <div class="value">
+                            <input type="text" class="short" name="settings[purchase_margin]" value="{$profile.config.purchase_margin|default:0|escape}" />
+                            <p class="hint">Размер наценки</p>
+                        </div>
+                    </div>
+
                 </div>
 
                 <div class="field-group">
@@ -365,7 +403,52 @@
                     <h2 class="gray">Загрузка прайс-листа</h2>
                     <div class="field">
                         <div class="name">
-                            Прайс лист находится в архиве
+                            Формат файла
+                        </div>
+                        <div class="value no-shift">
+                            <select name="settings[file_format]">
+                                <option {if $profile.config.file_format|default:'xls' == 'xls'}selected="selected"{/if} value="xls">Excel - xls/xlsx</option>
+                                <option {if $profile.config.file_format|default:'xls' == 'csv'}selected="selected"{/if} value="csv">CSV</option>
+                            </select>
+                            <p class="hint">
+                                Укажите формат файла прайс-листа
+                            </p>
+                        </div>
+                    </div>
+                    <div class="field csv-field">
+                        <div class="name">
+                            CSV. Кодировка
+                        </div>
+                        {$encodings = ['UTF-8','CP1251','ASCII']}
+                        {*,'CP437','CP737','CP775','CP850','CP852','CP855','CP857','CP858','CP860','CP861','CP862','CP863','CP864','CP865','CP866','CP869','CP874','CP932','CP936','CP949','CP950','UTF-16LE','CP1250','CP1252','CP1253','CP1254','CP1255','CP1256','CP1257'*}
+                        <div class="value no-shift">
+                            <select name="settings[csv_encoding]">
+                                {foreach $encodings as $encoding}
+                                    <option {if $profile.config.csv_encoding|default:'UTF-8' == $encoding}selected="selected"{/if} value="{$encoding}">{$encoding}</option>
+                                {/foreach}
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="field csv-field">
+                        <div class="name">
+                            CSV. Разделитель
+                        </div>
+                        <div class="value no-shift">
+                            <input type="text" name="settings[csv_delimiter]" value="{$profile.config.csv_delimiter|default:';'|escape}" />
+                        </div>
+                    </div>
+                    <div class="field csv-field">
+                        <div class="name">
+                            CSV. Ограничитель
+                        </div>
+                        <div class="value no-shift">
+                            <input type="text" name="settings[csv_enclosure]" value="{$profile.config.csv_enclosure|default:'"'|escape}" />
+                        </div>
+                    </div>
+                    <div class="field">
+                        <div class="name">
+                            Прайс-лист находится в архиве
                         </div>
                         <div class="value no-shift">
                             <select name="settings[archive]">
@@ -379,23 +462,74 @@
                     </div>
                     <div class="field">
                         <div class="name">
+                            Тип загрузки файла
+                        </div>
+                        <div class="value no-shift">
+                            <select name="settings[upload_type]">
+                                <option {if $profile.config.upload_type|default:'local' == 'local'}selected="selected"{/if} value="local">Загрузка файла с локального компьютера</option>
+                                <option {if $profile.config.upload_type|default:'local' == 'url'}selected="selected"{/if} value="url">Загрузка файла по ссылке</option>
+                                <option {if $profile.config.upload_type|default:'local' == 'email'}selected="selected"{/if} value="email">Загрузка файла через Email</option>
+                            </select>
+                            <p class="hint">
+                                Укажите способ загрузки файла прайс-листа
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="field upload-file-field upload-file-email">
+                        <div class="name">
+                            Найстройки доступа к почтовому ящику
+                        </div>
+                        <div class="value no-shift">
+                            <p>
+                                Email<br/>
+                                <input type="text" name="settings[email_email]" value="{$profile.config.email_email|default:''|escape}" >
+                            </p>
+                            <p>
+                                Сервер<br/>
+                                <input type="text" name="settings[email_server]" value="{$profile.config.email_server|default:''|escape}" >
+                            </p>
+                            <p>
+                                Порт<br/>
+                                <input type="text" name="settings[email_port]" value="{$profile.config.email_port|default:'110'|escape}" >
+                            </p>
+                            <p>
+                                Логин<br/>
+                                <input type="text" name="settings[email_login]" value="{$profile.config.email_login|default:''|escape}" >
+                            </p>
+                            <p>
+                                Пароль<br/>
+                                <input type="text" name="settings[email_password]" value="{$profile.config.email_password|default:''|escape}" >
+                            </p>
+                            <p>
+                                SSL<br/>
+                                <input type="checkbox" name="settings[email_ssl]" value="1" {if $profile.config.email_ssl|default:0}checked="checked"{/if} >
+                            </p>
+                            <a data-action="?plugin=updateproducts&module=upload" class="upload-but" href="#"><i class="icon16 upload"></i>Загрузить</a>
+                        </div>
+                    </div>
+                    <div class="field upload-file-field upload-file-url">
+                        <div class="name">
                             Ссылка на скачивание
                         </div>
                         <div class="value no-shift">
                             <input type="text" name="settings[file_url]" id="image-url" value="{$profile.config.file_url|default:''|escape}" >
-                            <a data-action="?plugin=updateproducts&module=upload" id="image-upload-but" href="#"><i class="icon16 upload"></i>Загрузить</a><span id="image-upload-loading" style="display:none;"><i class="icon16 loading"></i>Загрузка...</span>
+                            <a data-action="?plugin=updateproducts&module=upload" class="upload-but" href="#"><i class="icon16 upload"></i>Загрузить</a>
                             <p class="hint">Загрузка прайс-листа осуществляется по указанной ссылке. Это можно использовать для настройки автоматического обновления по расписанию через планировщик задач CRON</p>
                         </div>
                     </div>
-                    <div class="field">
+                    <div class="field upload-file-field upload-file-local">
                         <div class="name">
-                            Файл
+                            Выберите Файл
                         </div>
                         <div class="value no-shift">
                             <input type="file" name="" class="fileupload" data-action="?plugin=updateproducts&module=upload">
+                        </div>
+                    </div>
+                    <div class="field">
+                        <div class="value no-shift">
                             <div class="js-fileupload-progress" style="display:none;"></div>
                             <span class="errormsg" style="display:none;"><br><br><i class="icon10 no"></i> <span></span></span>
-
                         </div>
                     </div>
                 </div>

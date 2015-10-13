@@ -17,7 +17,6 @@ $.extend($.importexport.plugins, {
             $.extend(this.data, data);
             this.buttonInit();
             this.uploadInit();
-            this.uploadByUrlInit();
             this.saveInit();
         },
         hashAction: function (hash) {
@@ -31,6 +30,40 @@ $.extend($.importexport.plugins, {
 
         },
         buttonInit: function () {
+            $('#hide-show-column-feature').click(function () {
+                if ($(this).hasClass('active')) {
+                    $(this).text('Показать дополнительные характеристики');
+                    $('.column-feature-row').hide();
+                    $(this).removeClass('active');
+                } else {
+                    $(this).text('Скрыть дополнительные характеристики');
+                    $('.column-feature-row').show();
+                    $(this).addClass('active');
+                }
+                return false;
+            });
+            $('select[name="settings[upload_type]"]').change(function () {
+                $('.js-fileupload-progress').html('');
+                $('.upload-file-field').hide();
+                if ($(this).val() == 'local') {
+                    $('.upload-file-local').show();
+                } else if ($(this).val() == 'url') {
+                    $('.upload-file-url').show();
+                } else if ($(this).val() == 'email') {
+                    $('.upload-file-email').show();
+                }
+            });
+            $('select[name="settings[upload_type]"]').change();
+
+            $('select[name="settings[file_format]"]').change(function () {
+                if ($(this).val() == 'csv') {
+                    $('.csv-field').show();
+                } else {
+                    $('.csv-field').hide();
+                }
+            });
+            $('select[name="settings[file_format]"]').change();
+
             $('.select-all-features').change(function () {
                 if ($(this).is(':checked')) {
                     $(this).parent().find('div input[type=checkbox]').attr('checked', 'checked');
@@ -69,7 +102,14 @@ $.extend($.importexport.plugins, {
                 $('#replace-count-row').tmpl().appendTo('#replace-data tbody');
                 return false;
             });
-
+            $('input[name="settings[calculation_purchase_price]"]').change(function(){
+                if ($(this).is(':checked')) {
+                    $('.calculation-purchase-price-field').show();
+                } else {
+                    $('.calculation-purchase-price-field').hide();
+                }
+            });
+            $('input[name="settings[calculation_purchase_price]"]').change();
             $('select[name="settings[rounding]"]').change(function () {
                 if ($(this).val() == 'round') {
                     $('input[name="settings[round_precision]"]').closest('.field').show();
@@ -78,37 +118,6 @@ $.extend($.importexport.plugins, {
                 }
             });
             $('select[name="settings[rounding]"]').change();
-        },
-        uploadByUrlInit: function () {
-            var upload = $('.fileupload:first').closest('div.field');
-            $('#image-upload-but').click(function () {
-                var self = $(this);
-                var $form = $('#s-plugin-updateproducts');
-                $('#image-upload-loading').show();
-                $.ajax({
-                    type: 'POST',
-                    url: self.data('action'),
-                    data: $form.serializeArray(),
-                    dataType: 'json',
-                    success: function (data, textStatus, jqXHR) {
-                        console.log(data);
-                        $('#image-upload-loading').hide();
-
-                        if (data.status == 'ok') {
-                            $('.js-fileupload-progress').html('<i class="icon16 yes"></i>');
-                            $('.js-fileupload-progress').append(data.data.html);
-                        } else {
-                            $('.js-fileupload-progress').html('<i class="icon16 no"></i>' + data.errors.join(', '));
-                        }
-                        $('.js-fileupload-progress').show();
-                    },
-                    error: function (jqXHR, errorText) {
-                        $('.js-fileupload-progress').html('<i class="icon16 no"></i>' + jqXHR.responseText);
-                    }
-                });
-                return false;
-            });
-
         },
         saveInit: function () {
 
@@ -148,6 +157,34 @@ $.extend($.importexport.plugins, {
 
         },
         uploadInit: function () {
+            $('.upload-but').click(function () {
+                var self = $(this);
+                var $form = $('#s-plugin-updateproducts');
+                self.after('<i class="icon16 loading"></i>');
+                $('.js-fileupload-progress').html('');
+                $.ajax({
+                    type: 'POST',
+                    url: self.data('action'),
+                    data: $form.serializeArray(),
+                    dataType: 'json',
+                    success: function (data, textStatus, jqXHR) {
+                        self.next('.icon16.loading').remove();
+
+                        if (data.status == 'ok') {
+                            $('.js-fileupload-progress').html('<i class="icon16 yes"></i>');
+                            $('.js-fileupload-progress').append(data.data.html);
+                        } else {
+                            $('.js-fileupload-progress').html('<i class="icon16 no"></i>' + data.errors.join(', '));
+                        }
+                        $('.js-fileupload-progress').show();
+                    },
+                    error: function (jqXHR, errorText) {
+                        $('.js-fileupload-progress').html('<i class="icon16 no"></i>' + jqXHR.responseText);
+                    }
+                });
+                return false;
+            });
+
 
             var url = this.$form.find('.fileupload:first').data('action');
             var upload = this.$form.find('.fileupload:first').parents('div.field');
@@ -157,22 +194,22 @@ $.extend($.importexport.plugins, {
                 dataType: 'json',
                 start: function () {
                     upload.find('.fileupload:first').hide();
-                    upload.find('.js-fileupload-progress').html('<i class="icon16 loading"></i>');
-                    upload.find('.js-fileupload-progress').show();
+                    $('.js-fileupload-progress').html('<i class="icon16 loading"></i>');
+                    $('.js-fileupload-progress').show();
                 },
                 done: function (e, data) {
                     if (data.result.status == 'ok') {
-                        upload.find('.js-fileupload-progress').html('<i class="icon16 yes"></i>');
-                        upload.find('.js-fileupload-progress').append(data.result.data.html);
+                        $('.js-fileupload-progress').html('<i class="icon16 yes"></i>');
+                        $('.js-fileupload-progress').append(data.result.data.html);
                         upload.find('.fileupload:first').show();
                     } else {
-                        upload.find('.js-fileupload-progress').html('<i class="icon16 no"></i>' + data.result.errors.join(', '));
+                        $('.js-fileupload-progress').html('<i class="icon16 no"></i>' + data.result.errors.join(', '));
                         upload.find('.fileupload:first').show();
                     }
 
                 },
                 fail: function (e, data) {
-                    upload.find('.js-fileupload-progress').html('<i class="icon16 no"></i>' + data.jqXHR.responseText);
+                    $('.js-fileupload-progress').html('<i class="icon16 no"></i>' + data.jqXHR.responseText);
                     upload.find('.fileupload:first').show();
                 }
             });

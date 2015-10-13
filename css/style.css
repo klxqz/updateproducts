@@ -42,12 +42,10 @@
     color: red;
     font-weight: bold;
 }
-#hide-column-feature-row{
+.column-feature-row{
     display: none;
 }
-.column-feature{
-    display: none;
-}
+
 
 .plugin-menu{
     float: right;

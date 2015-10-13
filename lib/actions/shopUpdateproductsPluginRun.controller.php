@@ -5,6 +5,12 @@ class shopUpdateproductsPluginRunController extends waLongActionController {
     const STAGE_UPDATEPRODUCTS = 'updateproduct';
 
     protected $sheet;
+    protected $features;
+
+    public function __construct() {
+        $feature_model = new shopFeatureModel();
+        $this->features = $feature_model->select('`id`,`code`, `name`,`type`')->fetchAll('code', true);
+    }
 
     protected function preExecute() {
         $this->getResponse()->addHeader('Content-type', 'application/json');
@@ -86,7 +92,7 @@ class shopUpdateproductsPluginRunController extends waLongActionController {
         $params = $this->data['params'];
         if (!empty($params['report']) && !empty($params['report_email'])) {
             $subject = 'Обновление товаров';
-            $body = 'Обновление завершено';
+            $body = $report;
             $to = explode(',', $params['report_email']);
             $message = new waMailMessage($subject, $body);
             $general = wa('shop')->getConfig()->getGeneralSettings();
@@ -146,6 +152,8 @@ class shopUpdateproductsPluginRunController extends waLongActionController {
         list($type, $field) = explode(':', $column);
         if ($type == 'sku') {
             $name = $this->sku_columns[$field];
+        } else {
+            $name = $this->features[$field]['name'];
         }
         return array('field' => $field, 'type' => $type, 'name' => $name);
     }
@@ -196,8 +204,6 @@ class shopUpdateproductsPluginRunController extends waLongActionController {
             $profiles = new shopImportexportHelper('updateproducts');
             $default_export_config = array();
             if ($backend) {
-
-
                 $profile_config = (array) waRequest::post('settings', array()) + $default_export_config;
                 $profile_id = $profiles->setConfig($profile_config);
                 $this->plugin()->getHash($profile_id);
@@ -217,8 +223,6 @@ class shopUpdateproductsPluginRunController extends waLongActionController {
                 throw new waException('Ошибка загрузки файла');
             }
 
-            $margin_type = $profile_config['margin_type'];
-            $margin = $profile_config['margin'];
             $list_num = intval($profile_config['list_num']);
             $row_num = intval($profile_config['row_num']) > 0 ? intval($profile_config['row_num']) : 1;
             $row_count = intval($profile_config['row_count']);
@@ -292,8 +296,8 @@ class shopUpdateproductsPluginRunController extends waLongActionController {
                 'sets' => $sets ? array_keys($sets) : null,
                 'features' => $features ? $features : null,
                 'currency' => $currency,
-                'margin_type' => $margin_type,
-                'margin' => $margin,
+                'margin_type' => $profile_config['margin_type'],
+                'margin' => $profile_config['margin'],
                 'rounding' => $profile_config['rounding'],
                 'round_precision' => $profile_config['round_precision'],
                 'replace_count_search' => $profile_config['replace_count_search'],
@@ -302,6 +306,9 @@ class shopUpdateproductsPluginRunController extends waLongActionController {
                 'report' => $profile_config['report'],
                 'report_email' => $profile_config['report_email'],
                 'profile_id' => $profile_id,
+                'calculation_purchase_price' => $profile_config['calculation_purchase_price'],
+                'purchase_margin_type' => $profile_config['purchase_margin_type'],
+                'purchase_margin' => $profile_config['purchase_margin'],
             );
 
             if (!empty($params['sets'])) {
@@ -429,7 +436,16 @@ class shopUpdateproductsPluginRunController extends waLongActionController {
                         $value += $margin;
                     }
                 }
-
+                if ($field == 'price' && $params['calculation_purchase_price']) {
+                    $purchase_price = $value;
+                    if ($params['purchase_margin_type'] == 'percent') {
+                        $purchase_price += round($value * $params['purchase_margin'] / 100.00);
+                    } else {
+                        $purchase_price += $params['purchase_margin'];
+                    }
+                    $update_data['purchase_price'] = $purchase_price;
+                }
+                
                 if (!empty($params['rounding']) && ($field == 'price' || $field == 'purchase_price' || $field == 'compare_price')) {
                     switch ($params['rounding']) {
                         case 'round':
@@ -505,6 +521,7 @@ class shopUpdateproductsPluginRunController extends waLongActionController {
     }
 
     protected function getSkuByFields($columns, $keys, $options = null) {
+        $feature_model = new shopFeatureModel();
         $types = !empty($options['types']) ? $options['types'] : null;
         $sets = !empty($options['sets']) ? $options['sets'] : null;
         $features = !empty($options['features']) ? $options['features'] : null;
@@ -514,9 +531,19 @@ class shopUpdateproductsPluginRunController extends waLongActionController {
 
         foreach ($keys as $id => $key) {
             $value = $this->getDataValue($id, $columns);
-            if (!empty($value)) {
-                $condition = "`shop_product_skus`.`" . $key['field'] . "` = '" . $model->escape($value) . "'";
-                $where[] = $condition;
+            if (empty($value)) {
+                continue;
+            }
+            if ($key['type'] == 'sku') {
+                $where[] = "`shop_product_skus`.`" . $key['field'] . "` = '" . $model->escape($value) . "'";
+            } elseif ($key['type'] == 'feature') {
+                $feature = $feature_model->getByField('code', $key['field']);
+                $type = explode('.', $feature['type']);
+                $table = 'shop_feature_values_' . $type[0];
+                $where[] = "`shop_product_skus`.`product_id` IN (SELECT `product_id` FROM `shop_product_features` WHERE `shop_product_features`.`feature_value_id` IN (
+                                SELECT `id` FROM `" . $table . "` WHERE `value` = '" . $model->escape($value) . "'
+                                AND `feature_id` = '" . $feature['id'] . "'
+                                ))";
             }
         }
         if ($this->isDebug()) {
@@ -556,7 +583,6 @@ class shopUpdateproductsPluginRunController extends waLongActionController {
                 WHERE " . implode(' AND ', $where) . " LIMIT 1";
 
             $result = $model->query($sql)->fetch();
-            echo $sql;exit;
             if ($this->isDebug()) {
                 waLog::log("SQL " . $sql, 'updateproduct.log');
                 waLog::log("Count Products: " . count($result), 'updateproduct.log');

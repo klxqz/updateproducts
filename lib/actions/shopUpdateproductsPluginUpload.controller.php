@@ -11,6 +11,12 @@ class shopUpdateproductsPluginUploadController extends waJsonController {
         'purchase_price' => 'Закупочная цена',
         'compare_price' => 'Зачеркнутая цена',
     );
+    protected $features;
+
+    public function __construct() {
+        $feature_model = new shopFeatureModel();
+        $this->features = $feature_model->select('`id`,`code`, `name`,`type`')->fetchAll('code', true);
+    }
 
     public function execute() {
         try {
@@ -56,6 +62,11 @@ class shopUpdateproductsPluginUploadController extends waJsonController {
 
             $inputFileType = PHPExcel_IOFactory::identify($filepath);
             $objReader = PHPExcel_IOFactory::createReader($inputFileType);
+            if ($profile_config['file_format'] == 'csv') {
+                $objReader->setInputEncoding($profile_config['csv_encoding']);
+                $objReader->setDelimiter($profile_config['csv_delimiter']);
+                $objReader->setEnclosure($profile_config['csv_enclosure']);
+            }
             $objPHPExcel = @$objReader->load($filepath);
 
             if (!$list_num) {
@@ -122,11 +133,9 @@ class shopUpdateproductsPluginUploadController extends waJsonController {
         list($type, $field) = explode(':', $column);
         if ($type == 'sku') {
             $name = $this->sku_columns[$field];
+        } else {
+            $name = $this->features[$field]['name'];
         }
-        /*
-          else {
-          $name = $this->features[$field]['name'];
-          } */
         return array('field' => $field, 'type' => $type, 'name' => $name);
     }
 
