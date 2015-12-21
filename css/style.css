@@ -1,3 +1,8 @@
+.test_table_container{
+    width: 800px;
+    overflow-x: scroll;
+}
+table.zebra tr td.critical,table.zebra tr th.critical { background: #fcc; }
 .test_table td{
     border: 3px double #000;
     padding: 0px 10px;
@@ -7,35 +12,6 @@
     margin-top: 20px;
     padding: 10px;
     display: inline-block;
-}
-.add-template{
-    display: inline-block;
-    margin-top: 5px;
-}
-.template-name{
-    display: none;
-}
-.с-add-template{
-    display: none;
-}
-.save-template{
-    display: none;
-}
-.loading-template{
-    display: none;
-}
-.yes-template{
-    display: none;
-}
-#price-data{
-    width: auto;
-}
-#price-data th{
-    text-align: center;
-}
-#price-data th,#price-data td{
-    padding: 3px 10px;
-
 }
 
 .error{
@@ -65,4 +41,8 @@
 }
 .hidden-feature{
     display: none;
+}
+#features-table{
+    height: 500px;
+    overflow-y: scroll;
 }

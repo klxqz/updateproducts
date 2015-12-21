@@ -91,11 +91,11 @@ class shopUpdateproductsPluginUploadController extends waJsonController {
             $to = min($row_num + 10, $total_row);
 
             $html = '<p>Всего строк в файле: ' . $total_row . '</p><p>Строк для обработки: ' . $count . '</p>';
-            $html .='<table class="test_table"><tr>';
+            $html .='<div class="test_table_container"><table class="table zebra test_table"><thead><tr>';
             foreach ($columns as $key => $column) {
-                $html .='<td' . (!empty($keys[$key]) ? ' style="border-color:red;"' : '') . '>' . $column['name'] . '</td>';
+                $html .='<th>' . $column['name'] . '</th>';
             }
-            $html .='</tr>';
+            $html .='</tr></thead>';
 
             for ($i = $row_num; $i <= $to; $i++) {
                 $html .='<tr>';
@@ -111,12 +111,12 @@ class shopUpdateproductsPluginUploadController extends waJsonController {
                     } catch (Exception $ex) {
                         
                     }
-                    $html .='<td' . (!empty($keys[$key]) ? ' style="border-color:red;"' : '') . '>' . $val . '</td>';
+                    $html .='<td' . (!empty($keys[$key]) ? ' class="critical"' : '') . '>' . $val . '</td>';
                 }
                 $html .='</tr>';
             }
 
-            $html .='</table><p style="color: red;">Искать записи для обновления по полю:</p><ul>';
+            $html .='</table></div><p style="color: red;">Искать записи для обновления по полю:</p><ul>';
             foreach ($keys as $key) {
                 $html .='<li style="color: red;">' . $key['name'] . '</li>';
             }

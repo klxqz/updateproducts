@@ -71,7 +71,7 @@ class shopUpdateproductsPluginRunController extends waLongActionController {
     protected function finish($filename) {
         $this->info();
         if ($this->getRequest()->post('cleanup')) {
-            //unlink($this->data['filepath']);
+            @unlink($this->data['filepath']);
             return true;
         }
         return false;
@@ -91,14 +91,16 @@ class shopUpdateproductsPluginRunController extends waLongActionController {
 
         $params = $this->data['params'];
         if (!empty($params['report']) && !empty($params['report_email'])) {
-            $subject = 'Обновление товаров';
+            $subject = 'Обновление товаров. Профиль №' . $params['profile_id'];
             $body = $report;
             $to = explode(',', $params['report_email']);
             $message = new waMailMessage($subject, $body);
             $general = wa('shop')->getConfig()->getGeneralSettings();
             $message->setFrom($general['email'], $general['name']);
             $file = wa()->getTempPath('plugins/updateproducts/download/' . $params['profile_id'] . '/not_found_file.csv');
-            $message->addAttachment($file);
+            if (file_exists($file)) {
+                $message->addAttachment($file);
+            }
             $message->setTo($to);
             $message->send();
         }
@@ -182,6 +184,11 @@ class shopUpdateproductsPluginRunController extends waLongActionController {
 
         $inputFileType = PHPExcel_IOFactory::identify($filepath);
         $objReader = PHPExcel_IOFactory::createReader($inputFileType);
+        if ($params['file_format'] == 'csv') {
+            $objReader->setInputEncoding($params['csv_encoding']);
+            $objReader->setDelimiter($params['csv_delimiter']);
+            $objReader->setEnclosure($params['csv_enclosure']);
+        }
         $objPHPExcel = $objReader->load($filepath);
         try {
             $sheet = $objPHPExcel->getSheet($list_num - 1);
@@ -202,7 +209,12 @@ class shopUpdateproductsPluginRunController extends waLongActionController {
         try {
             $backend = (wa()->getEnv() == 'backend');
             $profiles = new shopImportexportHelper('updateproducts');
-            $default_export_config = array();
+            $default_export_config = array(
+                'replace_count_search' => array(),
+                'replace_count_replace' => array(),
+                'replace_count_infinity' => array(),
+                'report' => 0,
+            );
             if ($backend) {
                 $profile_config = (array) waRequest::post('settings', array()) + $default_export_config;
                 $profile_id = $profiles->setConfig($profile_config);
@@ -264,6 +276,11 @@ class shopUpdateproductsPluginRunController extends waLongActionController {
 
             $inputFileType = PHPExcel_IOFactory::identify($filepath);
             $objReader = PHPExcel_IOFactory::createReader($inputFileType);
+            if ($profile_config['file_format'] == 'csv') {
+                $objReader->setInputEncoding($profile_config['csv_encoding']);
+                $objReader->setDelimiter($profile_config['csv_delimiter']);
+                $objReader->setEnclosure($profile_config['csv_enclosure']);
+            }
             $objPHPExcel = $objReader->load($filepath);
             try {
                 $sheet = $objPHPExcel->getSheet($list_num - 1);
@@ -306,6 +323,10 @@ class shopUpdateproductsPluginRunController extends waLongActionController {
                 'report' => $profile_config['report'],
                 'report_email' => $profile_config['report_email'],
                 'profile_id' => $profile_id,
+                'file_format' => $profile_config['file_format'],
+                'csv_encoding' => $profile_config['csv_encoding'],
+                'csv_delimiter' => $profile_config['csv_delimiter'],
+                'csv_enclosure' => $profile_config['csv_enclosure'],
                 'calculation_purchase_price' => $profile_config['calculation_purchase_price'],
                 'purchase_margin_type' => $profile_config['purchase_margin_type'],
                 'purchase_margin' => $profile_config['purchase_margin'],
@@ -326,32 +347,69 @@ class shopUpdateproductsPluginRunController extends waLongActionController {
                     $where[] = "`type_id` IN (" . implode(',', $params['types']) . ")";
                 }
                 if (!empty($set_product_ids)) {
-                    $where[] = "`product_id` IN (" . implode(',', $set_product_ids) . ")";
+                    $where[] = "`id` IN (" . implode(',', $set_product_ids) . ")";
                 }
                 $sql = "UPDATE `shop_product` SET `status` = 0" . ($where ? " WHERE " . implode(" AND ", $where) : '');
                 $model->query($sql);
             }
             if ($set_product_null) {
-                $where = array();
-                if (!empty($params['types'])) {
-                    $where[] = "`type_id` IN (" . implode(',', $params['types']) . ")";
-                }
-                if (!empty($set_product_ids)) {
-                    $where[] = "`product_id` IN (" . implode(',', $set_product_ids) . ")";
-                }
-                $sql = "UPDATE `shop_product` SET `count` = 0" . ($where ? " WHERE " . implode(" AND ", $where) : '');
-                $model->query($sql);
 
+                if ($stock_id) {
+                    $where = array();
+                    $where[] = "`stock_id` = '" . (int) $stock_id . "'";
+                    if (!empty($params['types'])) {
+                        $where[] = "`product_id` IN (SELECT `id` FROM `shop_product` WHERE `type_id` IN (" . implode(',', $params['types']) . "))";
+                    }
+                    if (!empty($set_product_ids)) {
+                        $where[] = "`product_id` IN (" . implode(',', $set_product_ids) . ")";
+                    }
+                    $sql = "UPDATE `shop_product_stocks` SET `count` = 0 " . ($where ? "WHERE " . implode(" AND ", $where) : '');
+                    $model->query($sql);
 
-                $where = array();
-                if (!empty($params['types'])) {
-                    $where[] = "`product_id` IN (SELECT `id` FROM `shop_product` WHERE `type_id` IN (" . implode(',', $params['types']) . "))";
+                    /*
+
+                      $sql = "SELECT `id` FROM `shop_product_skus`" . ($where ? " WHERE " . implode(" AND ", $where) : '');
+                      $skus = $model->query($sql)->fetchAll();
+                      foreach ($skus as $sku) {
+                      $sql = "UPDATE `shop_product_skus` SET `count` = (SELECT sum(`count`) FROM `shop_product_stocks` WHERE `sku_id` = '" . $sku['id'] . "') WHERE `id` = '" . $sku['id'] . "'";
+                      $model->query($sql);
+                      }
+
+                      $where = array();
+                      if (!empty($params['types'])) {
+                      $where[] = "`type_id` IN (" . implode(',', $params['types']) . ")";
+                      }
+                      if (!empty($set_product_ids)) {
+                      $where[] = "`id` IN (" . implode(',', $set_product_ids) . ")";
+                      }
+                      $sql = "SELECT `id` FROM `shop_product`" . ($where ? " WHERE " . implode(" AND ", $where) : '');
+                      $products = $model->query($sql)->fetchAll();
+                      foreach ($products as $product) {
+                      $sql = "UPDATE `shop_product` SET `count` = (SELECT sum(`count`) FROM `shop_product_skus` WHERE `product_id` = '" . $product['id'] . "') WHERE `id` = '" . $product['id'] . "'";
+                      $model->query($sql);
+                      } */
+                } else {
+                    $where = array();
+                    if (!empty($params['types'])) {
+                        $where[] = "`type_id` IN (" . implode(',', $params['types']) . ")";
+                    }
+                    if (!empty($set_product_ids)) {
+                        $where[] = "`id` IN (" . implode(',', $set_product_ids) . ")";
+                    }
+                    $sql = "UPDATE `shop_product` SET `count` = 0" . ($where ? " WHERE " . implode(" AND ", $where) : '');
+                    $model->query($sql);
+
+                    $where = array();
+                    if (!empty($params['types'])) {
+                        $where[] = "`product_id` IN (SELECT `id` FROM `shop_product` WHERE `type_id` IN (" . implode(',', $params['types']) . "))";
+                    }
+                    if (!empty($set_product_ids)) {
+                        $where[] = "`product_id` IN (" . implode(',', $set_product_ids) . ")";
+                    }
+
+                    $sql = "UPDATE `shop_product_skus` SET `count` = 0" . ($where ? " WHERE " . implode(" AND ", $where) : '');
+                    $model->query($sql);
                 }
-                if (!empty($set_product_ids)) {
-                    $where[] = "`product_id` IN (" . implode(',', $set_product_ids) . ")";
-                }
-                $sql = "UPDATE `shop_product_skus` SET `count` = 0" . ($where ? " WHERE " . implode(" AND ", $where) : '');
-                $model->query($sql);
             }
 
 
@@ -372,13 +430,11 @@ class shopUpdateproductsPluginRunController extends waLongActionController {
             $this->data['memory'] = memory_get_peak_usage();
             $this->data['memory_avg'] = memory_get_usage();
 
-            $key_names = array();
-            foreach ($keys as $key) {
-                $key_names[] = iconv('UTF-8', 'CP1251', $key['name']);
-            }
             $this->data['not_found_file'] = wa()->getTempPath('plugins/updateproducts/download/' . $profile_id . '/not_found_file.csv');
+            if (file_exists($this->data['not_found_file'])) {
+                @unlink($this->data['not_found_file']);
+            }
             $f = fopen($this->data['not_found_file'], 'w+');
-            fputcsv($f, $key_names, ';', '"');
             fclose($f);
         } catch (waException $ex) {
             echo json_encode(array('error' => $ex->getMessage(),));
@@ -431,7 +487,7 @@ class shopUpdateproductsPluginRunController extends waLongActionController {
                 }
                 if ($field == 'price') {
                     if ($margin_type == 'percent') {
-                        $value += round($value * $margin / 100.00);
+                        $value += round($value * $margin / 100.00, 4);
                     } else {
                         $value += $margin;
                     }
@@ -439,13 +495,13 @@ class shopUpdateproductsPluginRunController extends waLongActionController {
                 if ($field == 'price' && $params['calculation_purchase_price']) {
                     $purchase_price = $value;
                     if ($params['purchase_margin_type'] == 'percent') {
-                        $purchase_price += round($value * $params['purchase_margin'] / 100.00);
+                        $purchase_price += round($value * $params['purchase_margin'] / 100.00, 4);
                     } else {
                         $purchase_price += $params['purchase_margin'];
                     }
                     $update_data['purchase_price'] = $purchase_price;
                 }
-                
+
                 if (!empty($params['rounding']) && ($field == 'price' || $field == 'purchase_price' || $field == 'compare_price')) {
                     switch ($params['rounding']) {
                         case 'round':
@@ -493,16 +549,14 @@ class shopUpdateproductsPluginRunController extends waLongActionController {
         } else {
             $not_found_file = array();
             foreach ($keys as $id => $key) {
-                if ($key['type'] == 'sku') {
-                    $value = $this->getDataValue($id, $columns);
-                }
+                $value = $this->getDataValue($id, $columns);
                 if (trim($value)) {
                     $not_found_file[] = $value;
                 }
             }
             if ($not_found_file) {
                 $f = fopen($this->data['not_found_file'], 'a');
-                fputcsv($f, $not_found_file, ';', '"');
+                fputcsv($f, $this->getDataRow(), ';', '"');
                 fclose($f);
             }
             if ($this->isDebug()) {
@@ -516,7 +570,7 @@ class shopUpdateproductsPluginRunController extends waLongActionController {
 
     protected function getSetIds($set_id) {
         $collection = new shopProductsCollection('set/' . $set_id);
-        $products = $collection->getProducts('*', 0, null, true);
+        $products = $collection->getProducts('*', 0, 99999, true);
         return array_keys($products);
     }
 
@@ -590,6 +644,21 @@ class shopUpdateproductsPluginRunController extends waLongActionController {
         }
 
         return $result;
+    }
+
+    protected function getDataRow() {
+        $row = array();
+        $params = $this->data['params'];
+        $row_num = $params['row_num'];
+
+        $iteration = $row_num + $this->data['offset'];
+        $highestColumn = $this->sheet->getHighestColumn();
+        $highestColumnIndex = PHPExcel_Cell::columnIndexFromString($highestColumn);
+
+        for ($i = 0; $i < $highestColumnIndex; $i++) {
+            $row[] = iconv('UTF-8', 'CP1251', trim($this->sheet->getCellByColumnAndRow($i, $iteration)->getValue()));
+        }
+        return $row;
     }
 
     protected function getDataValue($id, $columns) {

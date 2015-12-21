@@ -3,7 +3,7 @@
 <link rel="stylesheet" href="{$wa_app_static_url}plugins/updateproducts/css/style.css?{$wa->version()}">
 
 <ul class="plugin-menu">
-    <li><a href="mailto:support@wa-plugins.ru">Поддержка разработчика плагина</a></li>
+    <li><a href="mailto:support@wa-plugins.ru"><i class="icon16 ss pt hammer"></i>Поддержка разработчика плагина</a></li>
 </ul>
 
 
@@ -110,7 +110,6 @@
                         {/foreach}
                         <tr>
                             <td colspan="4">
-                                {*<a id="hide-column-feature" href="#">Скрыть дополнительные характеристики</a>*}
                                 <a id="hide-show-column-feature" href="#">Показать дополнительные характеристики</a>
                             </td>
                         </tr>
@@ -170,40 +169,42 @@
                             Характеристики
                         </div>
                         <div class="value">
-                            <table id="price-data" class="zebra">
-                                <thead>
-                                    <tr class="header">
-                                        <th>
-                                            <b>Характеристика</b>
-                                        </th>
-                                        <th>
-                                            <b>Значение</b>
-                                        </th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {foreach $features as $feature}
-                                        <tr>
-                                            <td>
-                                                {$feature.name}
-                                            </td>
-                                            <td>
-                                                <input class="select-all-features" type="checkbox"> - Выбрать все
-                                                <hr/>
-                                                {$field = "features_`$feature.id`"}
-                                                {foreach $feature.values as $value_id => $value}
-                                                    <div{if $value@iteration > 5} class="hidden-feature"{/if}>
-                                                        <input type="checkbox" name="settings[features_{$feature.id}][]" value="{$value_id}" {if !empty($profile.config[$field]) && in_array($value_id, $profile.config[$field])}checked="checked"{/if}> - {$value}<br/>
-                                                    </div>
-                                                    {if $value@iteration == 5 && !$value@last}
-                                                        <a href="#" class="features-show-all">Показать все...</a>
-                                                    {/if}
-                                                {/foreach}
-                                            </td>
+                            <div id="features-table">
+                                <table class="zebra">
+                                    <thead>
+                                        <tr class="header">
+                                            <th>
+                                                <b>Характеристика</b>
+                                            </th>
+                                            <th>
+                                                <b>Значение</b>
+                                            </th>
                                         </tr>
-                                    {/foreach}
-                                </tbody>
-                            </table>
+                                    </thead>
+                                    <tbody>
+                                        {foreach $features as $feature}
+                                            <tr>
+                                                <td>
+                                                    {$feature.name}
+                                                </td>
+                                                <td>
+                                                    <input class="select-all-features" type="checkbox"> - Выбрать все
+                                                    <hr/>
+                                                    {$field = "features_`$feature.id`"}
+                                                    {foreach $feature.values as $value_id => $value}
+                                                        <div{if $value@iteration > 5} class="hidden-feature"{/if}>
+                                                            <input type="checkbox" name="settings[features_{$feature.id}][]" value="{$value_id}" {if !empty($profile.config[$field]) && in_array($value_id, $profile.config[$field])}checked="checked"{/if}> - {$value}<br/>
+                                                        </div>
+                                                        {if $value@iteration == 5 && !$value@last}
+                                                            <a href="#" class="features-show-all">Показать все...</a>
+                                                        {/if}
+                                                    {/foreach}
+                                                </td>
+                                            </tr>
+                                        {/foreach}
+                                    </tbody>
+                                </table>
+                            </div>
                             <p class="hint">
                                 По указанным характеристикам ведется поиск товаров для обновления<br/>
                                 Если не выбрана ни одна характеристика, то в обновление участвуют товары с любыми доступными характеристиками<br/>
@@ -233,10 +234,8 @@
                             Скрывать товары
                         </div>
                         <div class="value">
-                            <select name="settings[set_product_status]">
-                                <option {if $profile.config.set_product_status|default:0=='0'}selected=""{/if} value="0">Нет</option>
-                                <option {if $profile.config.set_product_status|default:0=='1'}selected=""{/if} value="1">Да</option>
-                            </select>
+                            <input type="hidden" name="settings[set_product_status]" value="0" />
+                            <input{if $profile.config.set_product_status|default:0=='1'} checked="checked"{/if} type="checkbox" name="settings[set_product_status]" value="1" />
                             <p class="hint">При загрузке прайс-листа плагин установит для всех товаров стутус "Скрытый", а для товаров из прайс-листа с ненулевым остатком "Опубликован"</p>
                         </div>
                     </div>
@@ -245,10 +244,8 @@
                             Обнулить количество товаров перед загрузкой
                         </div>
                         <div class="value">
-                            <select name="settings[set_product_null]">
-                                <option {if $profile.config.set_product_null|default:0=='0'}selected=""{/if} value="0">Нет</option>
-                                <option {if $profile.config.set_product_null|default:0=='1'}selected=""{/if} value="1">Да</option>
-                            </select>
+                            <input type="hidden" name="settings[set_product_null]" value="0" />
+                            <input{if $profile.config.set_product_null|default:0=='1'} checked="checked"{/if} type="checkbox" name="settings[set_product_null]" value="1" />
                             <p class="hint">При загрузке прайс-листа плагин установит для всех товаров нулевое количество товаров, а для товаров из прайс-листа с ненулевым остатком устанавливается значение из файла</p>
                         </div>
                     </div>
@@ -314,8 +311,9 @@
                             Расчет закупочной цены по основной цене
                         </div>
                         <div class="value">
+                            <input type="hidden" name="settings[calculation_purchase_price]" value="0"/>
                             <input type="checkbox" name="settings[calculation_purchase_price]" value="1" {if $profile.config.calculation_purchase_price|default:0}checked="checked"{/if} />
-                             <p class="hint">Закупочная цена вычисляется по основной цене путем добавления наценки(установки скидки)</p>
+                            <p class="hint">Закупочная цена вычисляется по основной цене путем добавления наценки(установки скидки)</p>
                         </div>
                     </div>
                     <div class="field calculation-purchase-price-field">
