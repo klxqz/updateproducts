@@ -365,6 +365,22 @@ class shopUpdateproductsPluginRunController extends waLongActionController {
                     }
                     $sql = "UPDATE `shop_product_stocks` SET `count` = 0 " . ($where ? "WHERE " . implode(" AND ", $where) : '');
                     $model->query($sql);
+                    
+                    $sql = "SELECT * , sum( `count` ) as `total_count` FROM `shop_product_stocks` GROUP BY `sku_id` ";
+                    $skus = $model->query($sql)->fetchAll();
+                    
+                    foreach ($skus as $sku) {
+                        $sql = "UPDATE `shop_product_skus` SET `count` = '" . $sku['total_count'] . "' WHERE `id` = '" . $sku['sku_id'] . "'";
+                        $model->query($sql);
+                    }
+                    
+                    $sql = "SELECT * , sum( `count` ) as `total_count` FROM `shop_product_skus` GROUP BY `product_id`";
+                    $products = $model->query($sql)->fetchAll('product_id');
+                    
+                    foreach ($products as $product) {
+                        $sql = "UPDATE `shop_product` SET `count` = '" . $product['total_count'] . "' WHERE `id` = '" . $product['product_id'] . "'";
+                        $model->query($sql);
+                    }
 
                     /*
 
