@@ -42,7 +42,7 @@ $.extend($.importexport.plugins, {
                 }
                 return false;
             });
-            $('select[name="settings[upload_type]"]').change(function () {
+            $('select[name="settings[file][upload_type]"]').change(function () {
                 $('.js-fileupload-progress').html('');
                 $('.upload-file-field').hide();
                 if ($(this).val() == 'local') {
@@ -53,16 +53,16 @@ $.extend($.importexport.plugins, {
                     $('.upload-file-email').show();
                 }
             });
-            $('select[name="settings[upload_type]"]').change();
+            $('select[name="settings[file][upload_type]"]').change();
 
-            $('select[name="settings[file_format]"]').change(function () {
+            $('select[name="settings[file][file_format]"]').change(function () {
                 if ($(this).val() == 'csv') {
                     $('.csv-field').show();
                 } else {
                     $('.csv-field').hide();
                 }
             });
-            $('select[name="settings[file_format]"]').change();
+            $('select[name="settings[file][file_format]"]').change();
 
             $('.select-all-features').change(function () {
                 if ($(this).is(':checked')) {
@@ -84,16 +84,16 @@ $.extend($.importexport.plugins, {
                 $(this).closest('tr').remove();
                 return false;
             });
-            $(document).on('change', 'input[name="settings[replace_count_infinity][]"][type=checkbox]', function () {
+            $(document).on('change', 'input[name="settings[update][replace_count_infinity][]"][type=checkbox]', function () {
                 if ($(this).is(':checked')) {
-                    $(this).closest('tr').find('input[name="settings[replace_count_replace][]"][type=text]').attr('disabled', 'disabled');
-                    $(this).closest('tr').find('input[name="settings[replace_count_replace][]"][type=hidden]').val($(this).closest('tr').find('input[name="settings[replace_count_replace][]"][type=text]').val());
-                    $(this).closest('tr').find('input[name="settings[replace_count_replace][]"][type=hidden]').removeAttr('disabled');
-                    $(this).closest('tr').find('input[name="settings[replace_count_infinity][]"][type=hidden]').attr('disabled', 'disabled');
+                    $(this).closest('tr').find('input[name="settings[update][replace_count_replace][]"][type=text]').attr('disabled', 'disabled');
+                    $(this).closest('tr').find('input[name="settings[update][replace_count_replace][]"][type=hidden]').val($(this).closest('tr').find('input[name="settings[update][replace_count_replace][]"][type=text]').val());
+                    $(this).closest('tr').find('input[name="settings[update][replace_count_replace][]"][type=hidden]').removeAttr('disabled');
+                    $(this).closest('tr').find('input[name="settings[update][replace_count_infinity][]"][type=hidden]').attr('disabled', 'disabled');
                 } else {
-                    $(this).closest('tr').find('input[name="settings[replace_count_replace][]"][type=text]').removeAttr('disabled');
-                    $(this).closest('tr').find('input[name="settings[replace_count_replace][]"][type=hidden]').attr('disabled', 'disabled');
-                    $(this).closest('tr').find('input[name="settings[replace_count_infinity][]"][type=hidden]').removeAttr('disabled');
+                    $(this).closest('tr').find('input[name="settings[update][replace_count_replace][]"][type=text]').removeAttr('disabled');
+                    $(this).closest('tr').find('input[name="settings[update][replace_count_replace][]"][type=hidden]').attr('disabled', 'disabled');
+                    $(this).closest('tr').find('input[name="settings[update][replace_count_infinity][]"][type=hidden]').removeAttr('disabled');
                 }
                 return false;
             });
@@ -102,22 +102,22 @@ $.extend($.importexport.plugins, {
                 $('#replace-count-row').tmpl().appendTo('#replace-data tbody');
                 return false;
             });
-            $('input[name="settings[calculation_purchase_price]"]').change(function(){
+            $('input[name="settings[update][calculation_purchase_price]"]').change(function () {
                 if ($(this).is(':checked')) {
                     $('.calculation-purchase-price-field').show();
                 } else {
                     $('.calculation-purchase-price-field').hide();
                 }
             });
-            $('input[name="settings[calculation_purchase_price]"]').change();
-            $('select[name="settings[rounding]"]').change(function () {
+            $('input[name="settings[update][calculation_purchase_price]"]').change();
+            $('select[name="settings[update][rounding]"]').change(function () {
                 if ($(this).val() == 'round') {
-                    $('input[name="settings[round_precision]"]').closest('.field').show();
+                    $('input[name="settings[update][round_precision]"]').closest('.field').show();
                 } else {
-                    $('input[name="settings[round_precision]"]').closest('.field').hide();
+                    $('input[name="settings[update][round_precision]"]').closest('.field').hide();
                 }
             });
-            $('select[name="settings[rounding]"]').change();
+            $('select[name="settings[update][rounding]"]').change();
         },
         saveInit: function () {
 
@@ -133,8 +133,6 @@ $.extend($.importexport.plugins, {
                     data: $form.serializeArray(),
                     dataType: 'json',
                     success: function (data, textStatus, jqXHR) {
-
-                        console.log(data);
                         $('#image-upload-loading').hide();
 
                         if (data.status == 'ok') {
@@ -169,7 +167,6 @@ $.extend($.importexport.plugins, {
                     dataType: 'json',
                     success: function (data, textStatus, jqXHR) {
                         self.next('.icon16.loading').remove();
-
                         if (data.status == 'ok') {
                             $('.js-fileupload-progress').html('<i class="icon16 yes"></i>');
                             $('.js-fileupload-progress').append(data.data.html);
@@ -196,24 +193,41 @@ $.extend($.importexport.plugins, {
                     upload.find('.fileupload:first').hide();
                     $('.js-fileupload-progress').html('<i class="icon16 loading"></i>');
                     $('.js-fileupload-progress').show();
+                    $('#upload-progressbar').show();
                 },
                 done: function (e, data) {
-                    if (data.result.status == 'ok') {
+                    console.log(data);
+                    $('#upload-progressbar').hide();
+                    $('#upload-progressbar .progressbar-inner').css('width', 0);
+                    if (!data.result) {
+                        $('.js-fileupload-progress').html('<i class="icon16 no"></i> Получен пустой ответ от сервера.');
+                        upload.find('.fileupload:first').show();
+                    } else if (data.result.status == 'ok') {
                         $('.js-fileupload-progress').html('<i class="icon16 yes"></i>');
                         $('.js-fileupload-progress').append(data.result.data.html);
                         upload.find('.fileupload:first').show();
-                    } else {
+                    } else if (data.result.status == 'fail') {
                         $('.js-fileupload-progress').html('<i class="icon16 no"></i>' + data.result.errors.join(', '));
                         upload.find('.fileupload:first').show();
                     }
 
                 },
                 fail: function (e, data) {
-                    $('.js-fileupload-progress').html('<i class="icon16 no"></i>' + data.jqXHR.responseText);
+                    $('#upload-progressbar').hide();
+                    $('#upload-progressbar .progressbar-inner').css('width', 0);
                     upload.find('.fileupload:first').show();
+                    if (data.jqXHR.responseText) {
+                        $('.js-fileupload-progress').html('<i class="icon16 no"></i>' + data.jqXHR.responseText);
+                    } else {
+                        $('.js-fileupload-progress').html('<i class="icon16 no"></i> Получен пустой ответ от сервера. Код ответа сервера ' + data.jqXHR.status);
+                    }
+
+                },
+                progress: function (e, data) {
+                    var progress = parseInt(data.loaded / data.total * 100, 10);
+                    $('#upload-progressbar .progressbar-inner').css('width', progress + '%');
                 }
             });
-
         },
         actionHandler: function ($el) {
             try {
@@ -292,8 +306,8 @@ $.extend($.importexport.plugins, {
             this.form.find(':input').attr('disabled', true);
             this.form.find('a.js-action:visible').data('visible', 1).hide();
             this.form.find(':submit').hide();
-            this.form.find('.progressbar .progressbar-inner').css('width', '0%');
-            this.form.find('.progressbar').show();
+            this.form.find('#plugin-updateproducts-submit .progressbar .progressbar-inner').css('width', '0%');
+            this.form.find('#plugin-updateproducts-submit .progressbar').show();
             var url = $(element).attr('action');
             var self = this;
             $.ajax({
@@ -302,6 +316,7 @@ $.extend($.importexport.plugins, {
                 dataType: 'json',
                 type: 'post',
                 success: function (response) {
+                    console.log(response);
                     if (response.error) {
                         self.form.find(':input').attr('disabled', false);
                         self.form.find(':submit').show();
@@ -312,14 +327,14 @@ $.extend($.importexport.plugins, {
                                 $this.data('visible', null);
                             }
                         });
-                        self.form.find('.js-progressbar-container').hide();
+                        self.form.find('#plugin-updateproducts-submit .js-progressbar-container').hide();
                         self.form.find('.shop-ajax-status-loading').remove();
                         self.progress = false;
                         self.form.find('.errormsg').text(response.error);
                     } else {
-                        self.form.find('.progressbar').attr('title', '0.00%');
-                        self.form.find('.progressbar-description').text('0.00%');
-                        self.form.find('.js-progressbar-container').show();
+                        self.form.find('#plugin-updateproducts-submit .progressbar').attr('title', '0.00%');
+                        self.form.find('#plugin-updateproducts-submit .progressbar-description').text('0.00%');
+                        self.form.find('#plugin-updateproducts-submit .js-progressbar-container').show();
 
                         self.ajax_pull[response.processId] = [];
                         self.ajax_pull[response.processId].push(setTimeout(function () {
@@ -333,7 +348,13 @@ $.extend($.importexport.plugins, {
                         }, 5500));
                     }
                 },
-                error: function () {
+                error: function (response) {
+                    console.log(response);
+                    if (response.responseText) {
+                        self.form.find('#plugin-updateproducts-submit .errormsg').html(response.responseText);
+                    } else {
+                        self.form.find('#plugin-updateproducts-submit .errormsg').html('Ошибка: ' + response.status);
+                    }
                     self.form.find(':input').attr('disabled', false);
                     self.form.find('a.js-action:hidden').each(function () {
                         var $this = $(this);
@@ -343,9 +364,9 @@ $.extend($.importexport.plugins, {
                         }
                     });
                     self.form.find(':submit').show();
-                    self.form.find('.js-progressbar-container').hide();
-                    self.form.find('.shop-ajax-status-loading').remove();
-                    self.form.find('.progressbar').hide();
+                    self.form.find('#plugin-updateproducts-submit .js-progressbar-container').hide();
+                    self.form.find('#plugin-updateproducts-submit .shop-ajax-status-loading').remove();
+                    self.form.find('#plugin-updateproducts-submit .progressbar').hide();
                 }
             });
             return false;
@@ -366,7 +387,7 @@ $.extend($.importexport.plugins, {
                         clearTimeout(timer);
                     }
                 }
-                $bar = self.form.find('.progressbar .progressbar-inner');
+                $bar = self.form.find('#plugin-updateproducts-submit .progressbar .progressbar-inner');
                 $bar.css({
                     'width': '100%'
                 });
@@ -382,15 +403,18 @@ $.extend($.importexport.plugins, {
                     dataType: 'json',
                     type: 'post',
                     success: function (response) {
+                        console.log(response);
                         $.shop.trace('report', response);
                         $("#plugin-updateproducts-submit").hide();
-                        self.form.find('.progressbar').hide();
+                        self.form.find('#plugin-updateproducts-submit .progressbar').hide();
                         var $report = $("#plugin-updateproducts-report");
                         $report.show();
                         if (response.report) {
                             $report.find(".value:first").html(response.report);
                         }
                         $.storage.del('shop/hash');
+                    }, error: function (response) {
+                        console.log(response);
                     }
                 });
 
@@ -398,15 +422,15 @@ $.extend($.importexport.plugins, {
 
                 self.form.find(':input').attr('disabled', false);
                 self.form.find(':submit').show();
-                self.form.find('.js-progressbar-container').hide();
+                self.form.find('#plugin-updateproducts-submit .js-progressbar-container').hide();
                 self.form.find('.shop-ajax-status-loading').remove();
-                self.form.find('.progressbar').hide();
+                self.form.find('#plugin-updateproducts-submit .progressbar').hide();
                 self.form.find('.errormsg').text(response.error);
 
             } else {
                 var $description;
                 if (response && (typeof (response.progress) != 'undefined')) {
-                    $bar = self.form.find('.progressbar .progressbar-inner');
+                    $bar = self.form.find('#plugin-updateproducts-submit .progressbar .progressbar-inner');
                     var progress = parseFloat(response.progress.replace(/,/, '.'));
                     $bar.animate({
                         'width': progress + '%'
@@ -420,12 +444,12 @@ $.extend($.importexport.plugins, {
                     var message = response.progress + ' — ' + response.stage_name;
 
                     $bar.parents('.progressbar').attr('title', response.progress);
-                    $description = self.form.find('.progressbar-description');
+                    $description = self.form.find('#plugin-updateproducts-submit .progressbar-description');
                     $description.text(message);
                     $description.attr('title', title);
                 }
                 if (response && (typeof (response.warning) != 'undefined')) {
-                    $description = self.form.find('.progressbar-description');
+                    $description = self.form.find('#plugin-updateproducts-submit .progressbar-description');
                     $description.append('<i class="icon16 exclamation"></i><p>' + response.warning + '</p>');
                 }
 
@@ -443,7 +467,10 @@ $.extend($.importexport.plugins, {
                         success: function (response) {
                             self.progressHandler(url, response ? response.processId || id : id, response);
                         },
-                        error: function () {
+                        error: function (response) {
+                            var $description;
+                            $description = self.form.find('#plugin-updateproducts-submit .progressbar-description');
+                            $description.append('<i class="icon16 exclamation"></i>' + response.responseText);
                             self.progressHandler(url, id, null);
                         }
                     });

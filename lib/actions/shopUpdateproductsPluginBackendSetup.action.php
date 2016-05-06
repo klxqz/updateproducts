@@ -64,8 +64,6 @@ class shopUpdateproductsPluginBackendSetupAction extends waViewAction {
         $currencies = $model->getCurrencies();
         $this->view->assign('currencies', $currencies);
 
-        
-        
     }
 
 }

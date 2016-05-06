@@ -19,61 +19,61 @@ class shopUpdateproductsPluginUploadController extends waJsonController {
     }
 
     public function execute() {
+        error_reporting(E_ALL);
+        ini_set('display_errors', 'On');
         try {
             $profile_helper = new shopImportexportHelper($this->plugin_id);
-            $profile_config = (array) waRequest::post('settings', array());
+            $profile_config = waRequest::post('settings', array(), waRequest::TYPE_ARRAY);
             $profile_id = $profile_helper->setConfig($profile_config);
+            $filepath = shopUpdateproductsPlugin::getFilePath($profile_id, $profile_config['file']);
+            if (!file_exists($filepath)) {
+                throw new waException('Ошибка загрузки файла');
+            }
 
-
-            $filepath = shopUpdateproductsPlugin::getFilePath($profile_id, $profile_config);
-
-            $list_num = intval($profile_config['list_num']);
-            $row_num = intval($profile_config['row_num']) > 0 ? intval($profile_config['row_num']) - 1 : 0;
-            $row_count = intval($profile_config['row_count']);
-
-            $keysData = $this->parseData('keys_', $profile_config);
-            if (!$keysData) {
+            if (empty($profile_config['map']['keys'])) {
                 throw new waException('Ошибка. Укажите ключ для поиска соответствий.');
             }
-            $keys = array();
-            foreach ($keysData as $key => $checked) {
-                $keys[$key] = $this->getColumnInfo($key);
-            }
-            $updateData = $this->parseData('update_', $profile_config);
-            if (!$updateData) {
+            if (empty($profile_config['map']['update'])) {
                 throw new waException('Ошибка. Укажите поля для обновления.');
             }
+
+            $columns = array();
+            foreach ($profile_config['map']['columns'] as $key => $num) {
+                if ($num) {
+                    $columns[$key] = $this->getColumnInfo($key);
+                    $columns[$key]['num'] = $num;
+                }
+            }
+            if (empty($columns)) {
+                throw new waException('Ошибка. Укажите номера столбцов.');
+            }
+
+            $keys = array();
+            foreach ($profile_config['map']['keys'] as $key => $checked) {
+                $keys[$key] = $this->getColumnInfo($key);
+            }
+
             $update = array();
-            foreach ($updateData as $key => $checked) {
+            foreach ($profile_config['map']['update'] as $key => $checked) {
                 $update[$key] = $this->getColumnInfo($key);
             }
 
-            $columnsData = $this->parseData('columns_', $profile_config);
-            $columns = array();
-            foreach ($columnsData as $key => $num) {
-                $columns[$key] = $this->getColumnInfo($key);
-                $columns[$key]['num'] = $num;
-            }
-
-
             $autoload = waAutoload::getInstance();
-            $autoload->add('PHPExcel', "wa-apps/shop/plugins/updateproducts/lib/vendors/PHPExcel.php");
             $autoload->add('PHPExcel_IOFactory', "wa-apps/shop/plugins/updateproducts/lib/vendors/PHPExcel/IOFactory.php");
 
-            $inputFileType = PHPExcel_IOFactory::identify($filepath);
-            $objReader = PHPExcel_IOFactory::createReader($inputFileType);
-            if ($profile_config['file_format'] == 'csv') {
-                $objReader->setInputEncoding($profile_config['csv_encoding']);
-                $objReader->setDelimiter($profile_config['csv_delimiter']);
-                $objReader->setEnclosure($profile_config['csv_enclosure']);
+            if ($profile_config['file']['file_format'] == 'csv') {
+                $objReader = PHPExcel_IOFactory::createReader('CSV');
+                $objReader->setInputEncoding($profile_config['file']['csv_encoding']);
+                $objReader->setDelimiter($profile_config['file']['csv_delimiter']);
+                $objReader->setEnclosure($profile_config['file']['csv_enclosure']);
+            } else {
+                $inputFileType = PHPExcel_IOFactory::identify($filepath);
+                $objReader = PHPExcel_IOFactory::createReader($inputFileType);
             }
-            $objPHPExcel = @$objReader->load($filepath);
+            $objPHPExcel = $objReader->load($filepath);
 
-            if (!$list_num) {
-                throw new waException('Ошибка. Указан неверный «Номер листа». ');
-            }
             try {
-                $sheet = $objPHPExcel->getSheet($list_num - 1);
+                $sheet = $objPHPExcel->getSheet($profile_config['price_list']['list_num'] - 1);
             } catch (Exception $ex) {
                 $sheet_warning = '';
                 if ($objPHPExcel->getSheetCount() == 1) {
@@ -85,6 +85,8 @@ class shopUpdateproductsPluginUploadController extends waJsonController {
             }
 
 
+            $row_num = $profile_config['price_list']['row_num'];
+            $row_count = $profile_config['price_list']['row_count'];
             $total_row = $sheet->getHighestRow();
             $max_count = $total_row - $row_num + 1;
             $count = $row_count ? min($row_count, $max_count) : $max_count;
@@ -137,17 +139,6 @@ class shopUpdateproductsPluginUploadController extends waJsonController {
             $name = $this->features[$field]['name'];
         }
         return array('field' => $field, 'type' => $type, 'name' => $name);
-    }
-
-    protected function parseData($prefix, $array = array()) {
-        $result = array();
-        foreach ($array as $key => $item) {
-            if (preg_match('/' . $prefix . '(.+)/', $key, $match)) {
-                $sub = $match[1];
-                $result[$sub] = $item;
-            }
-        }
-        return $result;
     }
 
 }
