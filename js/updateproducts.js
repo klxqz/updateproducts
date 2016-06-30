@@ -98,6 +98,15 @@ $.extend($.importexport.plugins, {
                 return false;
             });
 
+            $('#add-margin-row-button').click(function () {
+                $('#margin-row').tmpl().appendTo('#margin-table tbody');
+                return false;
+            });
+            $(document).on('click', '.delete-margin-row-button', function () {
+                $(this).closest('tr').remove();
+                return false;
+            });
+
             $('#add-replace-count-row-button').click(function () {
                 $('#replace-count-row').tmpl().appendTo('#replace-data tbody');
                 return false;
@@ -255,10 +264,10 @@ $.extend($.importexport.plugins, {
                 $.shop.trace('submit.updateproducts ' + event.namespace, event);
                 try {
                     var $form = $(this);
-                    $form.find(':input, :submit').attr('disabled', false);
+                    //$form.find(':input, :submit').attr('disabled', false);
                     $.importexport.plugins.updateproducts.updateproductsHandler(this);
                 } catch (e) {
-                    $('#plugin-updateproducts-transport-group').find(':input').attr('disabled', false);
+                    //$('#plugin-updateproducts-transport-group').find(':input').attr('disabled', false);
                     $.shop.error('Exception: ' + e.message, e);
                 }
                 return false;
@@ -278,6 +287,7 @@ $.extend($.importexport.plugins, {
             /**
              * verify form
              */
+            /*
             var valid = true;
             this.form.find('.value.js-required :input:visible:not(:disabled)').each(function () {
                 var $this = $(this);
@@ -295,9 +305,9 @@ $.extend($.importexport.plugins, {
                 }, 1000, function () {
                     $target.focus();
                 });
-                this.form.find(':input, :submit').attr('disabled', null);
+                //this.form.find(':input, :submit').attr('disabled', null);
                 return false;
-            }
+            }*/
 
             this.progress = true;
 

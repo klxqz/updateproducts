@@ -3,7 +3,6 @@
 class shopUpdateproductsPluginRunCli extends waCliController {
 
     public function execute() {
-        $plugin = wa()->getPlugin('updateproducts');
 
         $profile_helper = new shopImportexportHelper('updateproducts');
 

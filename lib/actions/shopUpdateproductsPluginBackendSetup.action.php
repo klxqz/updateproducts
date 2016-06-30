@@ -43,7 +43,7 @@ class shopUpdateproductsPluginBackendSetupAction extends waViewAction {
         $features = $feature_model->select('`id`,`code`, `name`,`type`')->fetchAll('code', true);
         $features = $feature_model->getValues($features);
         foreach ($features as $key => $feature) {
-            $this->data_columns['feature:' . $key] = array('name' => $feature['name'] . '(' . $key . ')', 'key' => true, 'update' => false);
+            $this->data_columns['feature:' . $key] = array('name' => $feature['name'] . '(' . $key . ')', 'key' => true, 'update' => true);
         }
 
         $this->view->assign('data_columns', $this->data_columns);
