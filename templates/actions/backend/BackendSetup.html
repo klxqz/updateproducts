@@ -247,6 +247,16 @@
                 </div>
                 <div class="field">
                     <div class="name">
+                        Установить по умолчанию артикул с ненулевым количеством
+                    </div>
+                    <div class="value">
+                        <input type="hidden" name="settings[update][set_not_null_sku]" value="0" />
+                        <input{if $profile.config.update.set_not_null_sku|default:0} checked="checked"{/if} type="checkbox" name="settings[update][set_not_null_sku]" value="1" />
+                        <p class="hint">После обновления товаров по прайс листу, плагин выполняет проверку: имеет ли артикул по умолчанию не нулевое количество. Eсли нет, тогда плагин пытается найти артикул с ненулевым количеством и устанавливает его в качестве артикула по умолчанию</p>
+                    </div>
+                </div>
+                <div class="field">
+                    <div class="name">
                         Валюты
                     </div>
                     <div class="value">
@@ -290,6 +300,26 @@
                         <input type="hidden" name="settings[update][calculation_purchase_price]" value="0"/>
                         <input type="checkbox" name="settings[update][calculation_purchase_price]" value="1"{if $profile.config.update.calculation_purchase_price|default:0} checked="checked"{/if} />
                         <p class="hint">Закупочная цена вычисляется по основной цене путем добавления наценки(установки скидки)</p>
+                    </div>
+                </div>
+                <div class="field">
+                    <div class="name">
+                        Логирование изменение остатков на складе
+                    </div>
+                    <div class="value">
+                        <div>
+                            <input name="settings[update][stock_log]" type="radio" value="delete_all"{if $profile.config.update.stock_log|default:'not_delete' == 'delete_all'} checked="checked"{/if}/> - удалить всю историю изменений остатков
+                        </div>
+                        <div>
+                            <input name="settings[update][stock_log]" type="radio" value="delete_all_other_current"{if $profile.config.update.stock_log|default:'not_delete' == 'delete_all_other_current'} checked="checked"{/if}/> - удалить всю историю изменений остатков, оставить только изменения, связанные с текущим обновлением
+                        </div>
+                        <div>
+                            <input name="settings[update][stock_log]" type="radio" value="not_delete"{if $profile.config.update.stock_log|default:'not_delete' == 'not_delete'} checked="checked"{/if}/> - ничего не удалять
+                        </div>
+                        <br/>
+                        <a href="#" class="clear-stock-log"><i class="icon16 cross"></i>Очистить историю изменения остатков</a>
+
+
                     </div>
                 </div>
                 <div class="field calculation-purchase-price-field">

@@ -4,6 +4,9 @@ class shopUpdateproductsPluginRunController extends waLongActionController {
 
     const STAGE_RECALCULATION = 'recalculation';
     const STAGE_UPDATEPRODUCTS = 'updateproduct';
+    const STAGE_SETSKUS = 'setskus';
+    const STAGE_CLEARLOGBEFORE = 'clearlogbefore';
+    const STAGE_CLEARLOGAFTER = 'clearlogafter';
 
     protected $sheet;
 
@@ -13,8 +16,11 @@ class shopUpdateproductsPluginRunController extends waLongActionController {
     }
 
     protected $steps = array(
+        self::STAGE_CLEARLOGBEFORE => 'Очистка логов',
         self::STAGE_RECALCULATION => 'Пересчет количества товаров',
         self::STAGE_UPDATEPRODUCTS => 'Обновление товаров',
+        self::STAGE_SETSKUS => 'Установка артикулов в наличии',
+        self::STAGE_CLEARLOGAFTER => 'Очистка логов',
     );
 
     /**
@@ -70,12 +76,26 @@ class shopUpdateproductsPluginRunController extends waLongActionController {
             $this->data['stage'] = $this->getNextStep($this->data['stage']);
         }
 
+        if ($this->data['stage'] == self::STAGE_SETSKUS) {
+            $this->data['count'][self::STAGE_SETSKUS] = count($this->data['updated_product_ids']);
+        }
+
         switch ($this->data['stage']) {
             case self::STAGE_RECALCULATION:
                 $this->recalculationProducts();
                 break;
             case self::STAGE_UPDATEPRODUCTS:
                 $this->updateProducts();
+                break;
+            case self::STAGE_SETSKUS:
+                $this->setSkus();
+                break;
+            case self::STAGE_CLEARLOGBEFORE:
+                $this->clearLog();
+                
+                break;
+            case self::STAGE_CLEARLOGAFTER:
+                $this->clearLog();
                 break;
         }
 
@@ -270,12 +290,16 @@ class shopUpdateproductsPluginRunController extends waLongActionController {
 
             $this->data['updated'] = 0;
             $this->data['not_found'] = 0;
+            $this->data['updated_product_ids'] = array();
 
             $this->data['filepath'] = $filepath;
             $this->data['timestamp'] = time();
             $this->data['count'] = array(
                 self::STAGE_RECALCULATION => !empty($recal_count) ? $recal_count : 0,
                 self::STAGE_UPDATEPRODUCTS => $count,
+                self::STAGE_SETSKUS => $profile_config['update']['set_not_null_sku'] ? 1 : 0,
+                self::STAGE_CLEARLOGBEFORE => $profile_config['update']['stock_log'] == 'delete_all_other_current' ? 1 : 0,
+                self::STAGE_CLEARLOGAFTER => $profile_config['update']['stock_log'] == 'delete_all' ? 1 : 0,
             );
             $stages = array_keys($this->steps);
             $this->data['current'] = array_fill_keys($stages, 0);
@@ -513,6 +537,9 @@ class shopUpdateproductsPluginRunController extends waLongActionController {
                 waLog::log("\"" . $product->name . "\" обновлен", 'updateproduct.log');
             }
             $this->data['updated'] ++;
+            if (!in_array($product->id, $this->data['updated_product_ids'])) {
+                $this->data['updated_product_ids'][] = $product->id;
+            }
         } else {
             $not_found_file = array();
             foreach ($keys as $id => $key) {
@@ -532,6 +559,40 @@ class shopUpdateproductsPluginRunController extends waLongActionController {
             $this->data['not_found'] ++;
         }
         $this->data['current'][self::STAGE_UPDATEPRODUCTS] ++;
+    }
+
+    public function setSkus() {
+        $profile_config = $this->data['profile_config'];
+
+        $offet = $this->data['current'][self::STAGE_SETSKUS];
+        $product_id = $this->data['updated_product_ids'][$offet];
+        $product = new shopProduct($product_id);
+        $skus = $product->skus;
+        $default_sku_id = $product->sku_id;
+
+        $not_null_sku_id = $default_sku_id;
+        if ($skus[$default_sku_id]['count'] === 0) {
+            foreach ($skus as $sku) {
+                if ($sku['count'] === null || $sku['count'] > 0) {
+                    $not_null_sku_id = $sku['id'];
+                    break;
+                }
+            }
+            if ($not_null_sku_id != $default_sku_id) {
+                $product->sku_id = $not_null_sku_id;
+                $product->save();
+            }
+        }
+        $this->data['current'][self::STAGE_SETSKUS] ++;
+    }
+
+    public function clearLog() {
+        $sql = "TRUNCATE TABLE `shop_product_stocks_log`";
+        $model = new waModel();
+        $model->exec($sql);
+
+        $this->data['current'][self::STAGE_CLEARLOGAFTER] ++;
+        $this->data['current'][self::STAGE_CLEARLOGBEFORE] ++;
     }
 
     protected function getSetIds($set_id) {

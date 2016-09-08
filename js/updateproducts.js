@@ -127,6 +127,32 @@ $.extend($.importexport.plugins, {
                 }
             });
             $('select[name="settings[update][rounding]"]').change();
+            $('.clear-stock-log').click(function () {
+                var self = $(this);
+                var loading = $('<i class="icon16 loading"></i>');
+                self.after(loading);
+                $.ajax({
+                    type: 'POST',
+                    url: "?plugin=updateproducts&module=clear",
+                    dataType: 'json',
+                    success: function (data, textStatus, jqXHR) {
+                        loading.remove();
+                        if (data.status == 'ok') {
+                            self.after(' <span class="response-clear"><i class="icon16 yes"></i><span>');
+                        } else {
+                            self.after(' <span class="response-clear"><i class="icon16 no"></i>' + data.errors.join(', ') + '<span>');
+                        }
+                        setTimeout(function () {
+                            $('.response-clear').empty();
+                        }, 3000);
+                    },
+                    error: function (jqXHR, errorText) {
+                        loading.remove();
+                        self.after(' <span class="response-clear"><i class="icon16 no"></i>' + jqXHR.responseText + '<span>');
+                    }
+                });
+                return false;
+            });
         },
         saveInit: function () {
 
@@ -288,26 +314,26 @@ $.extend($.importexport.plugins, {
              * verify form
              */
             /*
-            var valid = true;
-            this.form.find('.value.js-required :input:visible:not(:disabled)').each(function () {
-                var $this = $(this);
-                var value = $this.val();
-                if (!value || (value == 'skip:')) {
-                    $this.addClass('error');
-                    valid = false;
-                }
-            });
-            if (!valid) {
-                var $target = this.form.find('.value.js-required :input.error:first');
-
-                $('html, body').animate({
-                    scrollTop: $target.offset().top - 10
-                }, 1000, function () {
-                    $target.focus();
-                });
-                //this.form.find(':input, :submit').attr('disabled', null);
-                return false;
-            }*/
+             var valid = true;
+             this.form.find('.value.js-required :input:visible:not(:disabled)').each(function () {
+             var $this = $(this);
+             var value = $this.val();
+             if (!value || (value == 'skip:')) {
+             $this.addClass('error');
+             valid = false;
+             }
+             });
+             if (!valid) {
+             var $target = this.form.find('.value.js-required :input.error:first');
+             
+             $('html, body').animate({
+             scrollTop: $target.offset().top - 10
+             }, 1000, function () {
+             $target.focus();
+             });
+             //this.form.find(':input, :submit').attr('disabled', null);
+             return false;
+             }*/
 
             this.progress = true;
 
