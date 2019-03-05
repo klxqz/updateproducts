@@ -59,52 +59,6 @@ class shopUpdateproductsPlugin extends shopPlugin {
         return true;
     }
 
-    private static function getEmailFile($filepath, $params) {
-        $mail_reader = new waMailPOP3($params);
-        $n = $mail_reader->count();
-        if (!$n || !$n[0]) {
-            throw new waException('Нет новых писем');
-        }
-
-        //for ($i = 1; $i <= $n[0]; $i++) {
-
-            $unique_id = uniqid(true);
-
-            //waLog::log("Start cycle. Iteration step = {$i}", 'updateproduct.log');
-
-            $message = null;
-            $message_id = null;
-            $mail_path = dirname($filepath) . '/' . $unique_id;
-            waFiles::create($mail_path);
-
-            waLog::log("Create path: {$mail_path}", 'updateproduct.log');
-
-            try {
-
-                waLog::log("Try mail reader get mail: {$mail_path}", 'updateproduct.log');
-                // read mail to temporary file
-                $mail_reader->get($n[0], $mail_path . '/mail.eml');
-                waLog::log("Try process eml", 'updateproduct.log');
-                // Process the file
-                $attachments = self::getAttachments($mail_path . '/mail.eml');
-                if ($attachments) {
-                    $attachment = reset($attachments);
-                    waLog::log("Try delete mail path: {$mail_path}", 'updateproduct.log');
-                    return $attachment['file'];
-                }
-            } catch (Exception $e) {
-                throw new waException($e->getMessage());
-            }
-            try {
-                //$mail_reader->delete($i);
-            } catch (Exception $e) {
-                waLog::log('Unable to delete message from mailbox ' . $source->name . ': ' . $e->getMessage(), 'updateproduct.log');
-            }
-        //}
-
-        return false;
-    }
-
     public static function getFilePath($profile_id, $profile_config) {
         $filepath = wa()->getCachePath('plugins/updateproducts/profile' . $profile_id . '/upload_file', 'shop');
         switch ($profile_config['upload_type']) {
@@ -124,28 +78,8 @@ class shopUpdateproductsPlugin extends shopPlugin {
                     throw new waException('Укажите ссылку для скачивания');
                 }
                 break;
-            case 'email':
-                $params = self::parseData('email_', $profile_config);
-                $filepath = self::getEmailFile($filepath, $params);
-                break;
         }
 
-        if (!empty($profile_config['archive']) && $profile_config['archive'] == 'zip') {
-            $autoload = waAutoload::getInstance();
-            $autoload->add('PclZip', "wa-apps/shop/plugins/updateproducts/lib/vendors/pclzip/pclzip.lib.php");
-            $archive = new PclZip($filepath);
-
-            $result = $archive->extract(PCLZIP_OPT_PATH, dirname($filepath) . '/zip/');
-            if ($result == 0) {
-                throw new waException($archive->errorInfo(true));
-            }
-            $result = $archive->listContent();
-            if ($result == 0) {
-                throw new waException($archive->errorInfo(true));
-            }
-            $archive_file = reset($result);
-            $filepath = dirname($filepath) . '/zip/' . $archive_file['filename'];
-        }
         return $filepath;
     }
 

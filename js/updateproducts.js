@@ -49,8 +49,6 @@ $.extend($.importexport.plugins, {
                     $('.upload-file-local').show();
                 } else if ($(this).val() == 'url') {
                     $('.upload-file-url').show();
-                } else if ($(this).val() == 'email') {
-                    $('.upload-file-email').show();
                 }
             });
             $('select[name="settings[file][upload_type]"]').change();
@@ -64,11 +62,11 @@ $.extend($.importexport.plugins, {
             });
             $('select[name="settings[file][file_format]"]').change();
 
-            $('.select-all-features').change(function () {
+            $('#features-table').on('change', '.select-all-features', function () {
                 if ($(this).is(':checked')) {
-                    $(this).parent().find('div input[type=checkbox]').attr('checked', 'checked');
+                    $(this).closest('li').siblings().find('input[type=checkbox]').attr('checked', 'checked');
                 } else {
-                    $(this).parent().find('div input[type=checkbox]').removeAttr('checked');
+                    $(this).closest('li').siblings().find('input[type=checkbox]').removeAttr('checked');
                 }
                 return false;
             });
@@ -127,32 +125,48 @@ $.extend($.importexport.plugins, {
                 }
             });
             $('select[name="settings[update][rounding]"]').change();
-            $('.clear-stock-log').click(function () {
-                var self = $(this);
-                var loading = $('<i class="icon16 loading"></i>');
-                self.after(loading);
-                $.ajax({
-                    type: 'POST',
-                    url: "?plugin=updateproducts&module=clear",
-                    dataType: 'json',
-                    success: function (data, textStatus, jqXHR) {
-                        loading.remove();
-                        if (data.status == 'ok') {
-                            self.after(' <span class="response-clear"><i class="icon16 yes"></i><span>');
-                        } else {
-                            self.after(' <span class="response-clear"><i class="icon16 no"></i>' + data.errors.join(', ') + '<span>');
-                        }
-                        setTimeout(function () {
-                            $('.response-clear').empty();
-                        }, 3000);
-                    },
-                    error: function (jqXHR, errorText) {
-                        loading.remove();
-                        self.after(' <span class="response-clear"><i class="icon16 no"></i>' + jqXHR.responseText + '<span>');
-                    }
-                });
-                return false;
+
+
+            $('.collapse-handler').click(function () {
+                $(this).find('i').toggleClass('rarr').toggleClass('darr');
+                $(this).next('.field-group').slideToggle();
             });
+
+            $('.feature-values-handler').click(function () {
+                if ($(this).find('i').hasClass('rarr')) {
+                    if ($(this).next('.values').length) {
+                        $(this).find('i').toggleClass('rarr').toggleClass('darr');
+                        $(this).next('.values').slideToggle();
+                    } else {
+                        var self = $(this);
+                        $.ajax({
+                            url: '?plugin=updateproducts&action=getFeatureValues',
+                            type: 'POST',
+                            data: {
+                                feature_id: $(this).data('feature-id')
+                            },
+                            dataType: 'json',
+                            success: function (data, textStatus) {
+                                if (data.status == 'ok') {
+                                    self.find('i').toggleClass('rarr').toggleClass('darr');
+                                    self.next('.selected-values').remove();
+                                    self.after(data.data.html);
+                                    self.next('.values').slideToggle();
+                                } else {
+                                    alert(data.errors.join(', '));
+                                }
+                            }, error: function (jqXHR, textStatus, errorThrown) {
+                                loading.remove();
+                                alert(jqXHR.responseText);
+                            }
+                        });
+                    }
+                } else {
+                    $(this).next('.values').slideToggle();
+                    $(this).find('i').toggleClass('rarr').toggleClass('darr');
+                }
+            });
+
         },
         saveInit: function () {
 
@@ -193,7 +207,7 @@ $.extend($.importexport.plugins, {
             $('.upload-but').click(function () {
                 var self = $(this);
                 var $form = $('#s-plugin-updateproducts');
-                self.after('<i class="icon16 loading"></i>');
+                self.after('<i class="icon16 loading"></i>Идет загрузка, пожалуйста, подождите...');
                 $('.js-fileupload-progress').html('');
                 $.ajax({
                     type: 'POST',
@@ -226,7 +240,7 @@ $.extend($.importexport.plugins, {
                 dataType: 'json',
                 start: function () {
                     upload.find('.fileupload:first').hide();
-                    $('.js-fileupload-progress').html('<i class="icon16 loading"></i>');
+                    $('.js-fileupload-progress').html('<i class="icon16 loading"></i>Идет загрузка, пожалуйста, подождите...');
                     $('.js-fileupload-progress').show();
                     $('#upload-progressbar').show();
                 },

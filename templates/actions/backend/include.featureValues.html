@@ -1,0 +1,23 @@
+<div class="values" style="display:none;">
+    <ul class="menu-v with-icons">
+        <li>
+            <label>
+                <input class="select-all-features" type="checkbox"> - Выбрать все
+            </label>
+        </li>
+        <li>
+            <hr/>
+        </li>
+        {foreach $feature.values as $v_id => $v}
+            <li>
+                <label>
+                    <input type="checkbox"
+                           name="settings[filter][features][{$feature.id}][]"
+                           value="{$v_id}"
+                            {if !empty($profile.config.filter.features[$feature.id]) && in_array($v_id, $profile.config.filter.features[$feature.id])} checked{/if}>
+                    - {$v}
+                </label>
+            </li>
+        {/foreach}
+    </ul>
+</div>

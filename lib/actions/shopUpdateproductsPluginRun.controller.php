@@ -5,8 +5,6 @@ class shopUpdateproductsPluginRunController extends waLongActionController {
     const STAGE_RECALCULATION = 'recalculation';
     const STAGE_UPDATEPRODUCTS = 'updateproduct';
     const STAGE_SETSKUS = 'setskus';
-    const STAGE_CLEARLOGBEFORE = 'clearlogbefore';
-    const STAGE_CLEARLOGAFTER = 'clearlogafter';
 
     protected $sheet;
 
@@ -16,11 +14,9 @@ class shopUpdateproductsPluginRunController extends waLongActionController {
     }
 
     protected $steps = array(
-        self::STAGE_CLEARLOGBEFORE => 'Очистка логов',
         self::STAGE_RECALCULATION => 'Пересчет количества товаров',
         self::STAGE_UPDATEPRODUCTS => 'Обновление товаров',
         self::STAGE_SETSKUS => 'Установка артикулов в наличии',
-        self::STAGE_CLEARLOGAFTER => 'Очистка логов',
     );
 
     /**
@@ -72,6 +68,7 @@ class shopUpdateproductsPluginRunController extends waLongActionController {
 
     protected function step() {
         $stage = $this->data['stage'];
+       
         if ($this->data['current'][$stage] >= $this->data['count'][$stage]) {
             $this->data['stage'] = $this->getNextStep($this->data['stage']);
         }
@@ -89,13 +86,6 @@ class shopUpdateproductsPluginRunController extends waLongActionController {
                 break;
             case self::STAGE_SETSKUS:
                 $this->setSkus();
-                break;
-            case self::STAGE_CLEARLOGBEFORE:
-                $this->clearLog();
-                
-                break;
-            case self::STAGE_CLEARLOGAFTER:
-                $this->clearLog();
                 break;
         }
 
@@ -298,8 +288,6 @@ class shopUpdateproductsPluginRunController extends waLongActionController {
                 self::STAGE_RECALCULATION => !empty($recal_count) ? $recal_count : 0,
                 self::STAGE_UPDATEPRODUCTS => $count,
                 self::STAGE_SETSKUS => $profile_config['update']['set_not_null_sku'] ? 1 : 0,
-                self::STAGE_CLEARLOGBEFORE => $profile_config['update']['stock_log'] == 'delete_all_other_current' ? 1 : 0,
-                self::STAGE_CLEARLOGAFTER => $profile_config['update']['stock_log'] == 'delete_all' ? 1 : 0,
             );
             $stages = array_keys($this->steps);
             $this->data['current'] = array_fill_keys($stages, 0);
@@ -507,7 +495,7 @@ class shopUpdateproductsPluginRunController extends waLongActionController {
                         foreach ($profile_config['update']['replace_count_search'] as $replace_id => $replace_search) {
                             if ($replace_search && strpos($value, $replace_search) !== false) {
                                 if (!empty($profile_config['update']['replace_count_infinity'][$replace_id])) {
-                                    $value = null;
+                                    $value = '';
                                 } elseif (isset($profile_config['update']['replace_count_replace'][$replace_id])) {
                                     $value = str_replace($replace_search, $profile_config['update']['replace_count_replace'][$replace_id], $value);
                                 }
@@ -562,8 +550,6 @@ class shopUpdateproductsPluginRunController extends waLongActionController {
     }
 
     public function setSkus() {
-        $profile_config = $this->data['profile_config'];
-
         $offet = $this->data['current'][self::STAGE_SETSKUS];
         $product_id = $this->data['updated_product_ids'][$offet];
         $product = new shopProduct($product_id);
@@ -584,15 +570,6 @@ class shopUpdateproductsPluginRunController extends waLongActionController {
             }
         }
         $this->data['current'][self::STAGE_SETSKUS] ++;
-    }
-
-    public function clearLog() {
-        $sql = "TRUNCATE TABLE `shop_product_stocks_log`";
-        $model = new waModel();
-        $model->exec($sql);
-
-        $this->data['current'][self::STAGE_CLEARLOGAFTER] ++;
-        $this->data['current'][self::STAGE_CLEARLOGBEFORE] ++;
     }
 
     protected function getSetIds($set_id) {

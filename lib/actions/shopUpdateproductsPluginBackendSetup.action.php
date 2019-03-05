@@ -1,9 +1,9 @@
 <?php
 
-class shopUpdateproductsPluginBackendSetupAction extends waViewAction {
+class shopUpdateproductsPluginBackendSetupAction extends waViewAction
+{
 
-    private $plugin_id = 'updateproducts';
-    protected $data_columns = array(
+    private $data_columns = array(
         'sku:sku' => array('name' => 'Артикул', 'key' => true, 'update' => true),
         'sku:name' => array('name' => 'Наименование артикула', 'key' => true, 'update' => true),
         'sku:stock' => array('name' => 'Количество товара', 'key' => false, 'update' => true),
@@ -12,12 +12,11 @@ class shopUpdateproductsPluginBackendSetupAction extends waViewAction {
         'sku:compare_price' => array('name' => 'Зачеркнутая цена', 'key' => false, 'update' => true),
     );
 
-    public function execute() {
+    public function execute()
+    {
+        $profile_helper = new shopImportexportHelper('updateproducts');
+        $list = $profile_helper->getList();
 
-        $routing = wa()->getRouting();
-
-        $profile_helper = new shopImportexportHelper($this->plugin_id);
-        $this->view->assign('profiles', $list = $profile_helper->getList());
         $profile = $profile_helper->getConfig();
         $profile['config'] += array(
             'hash' => '',
@@ -25,44 +24,50 @@ class shopUpdateproductsPluginBackendSetupAction extends waViewAction {
             'lifetime' => 0,
             'stock_id' => 0,
         );
-        $current_domain = &$profile['config']['domain'];
-
-
-        $this->view->assign('current_domain', $current_domain);
-        $this->view->assign('profile', $profile);
+        $current_domain = $profile['config']['domain'];
 
         $stock_model = new shopStockModel();
         $stocks = $stock_model->getAll();
-        $this->view->assign('stocks', $stocks);
-
-
-        $params = array();
-        $this->view->assign('params', array('params' => $params));
 
         $feature_model = new shopFeatureModel();
-        $features = $feature_model->select('`id`,`code`, `name`,`type`')->fetchAll('code', true);
-        $features = $feature_model->getValues($features);
+        $features = $feature_model->select('*')->where('`count` > 0')->fetchAll('code', true);
+        $feature_values = array();
         foreach ($features as $key => $feature) {
+            if (!empty($profile['config']['filter']['features'][$feature['id']])) {
+                $feature_value_model = $feature_model::getValuesModel($feature['type']);
+                foreach ($profile['config']['filter']['features'][$feature['id']] as $value_id) {
+                    $feature_values[$value_id] = $feature_value_model->getFeatureValue($value_id);
+                }
+            }
             $this->data_columns['feature:' . $key] = array('name' => $feature['name'] . '(' . $key . ')', 'key' => true, 'update' => true);
         }
 
-        $this->view->assign('data_columns', $this->data_columns);
-        $this->view->assign('features', $features);
-
         $type_model = new shopTypeModel();
-        $product_types = $type_model->getAll($type_model->getTableId(), true);
-        $this->view->assign('product_types', $product_types);
+        $product_types = $type_model->getAll('id', true);
 
         $set_model = new shopSetModel();
-        $this->view->assign('sets', $set_model->getAll($set_model->getTableId(), true));
+        $sets = $set_model->getAll($set_model->getTableId(), true);
 
         $cron_str = 'php ' . wa()->getConfig()->getRootPath() . '/cli.php shop UpdateproductsPluginRun profile_id=' . $profile['id'];
 
-        $this->view->assign('cron_str', $cron_str);
-
         $model = new shopCurrencyModel();
         $currencies = $model->getCurrencies();
-        $this->view->assign('currencies', $currencies);
+
+        $this->view->assign(array(
+            'profiles' => $list,
+            'current_domain' => $current_domain,
+            'profile' => $profile,
+            'stocks' => $stocks,
+            'params' => array('params' => array()),
+            'data_columns' => $this->data_columns,
+            'features' => $features,
+            'feature_values' => $feature_values,
+            'product_types' => $product_types,
+            'sets' => $sets,
+            'cron_str' => $cron_str,
+            'plugin_version' => wa()->getPlugin('updateproducts')->getVersion(),
+            'currencies' => $currencies,
+        ));
 
     }
 

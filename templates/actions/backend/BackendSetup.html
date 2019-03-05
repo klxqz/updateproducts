@@ -1,11 +1,15 @@
-<script type="text/javascript" src="{$wa_url}wa-content/js/jquery-plugins/fileupload/jquery.iframe-transport.js"></script>
+<script type="text/javascript"
+        src="{$wa_url}wa-content/js/jquery-plugins/fileupload/jquery.iframe-transport.js"></script>
 <script type="text/javascript" src="{$wa_url}wa-content/js/jquery-plugins/fileupload/jquery.fileupload.js"></script>
-<link rel="stylesheet" href="{$wa_app_static_url}plugins/updateproducts/css/style.css?{$wa->version()}">
+<link rel="stylesheet" href="{$wa_app_static_url}plugins/updateproducts/css/style.css?{$plugin_version}">
 
 <ul class="plugin-menu">
-    <li><a href="mailto:support@wa-plugins.ru"><i class="icon16 ss pt hammer"></i>Поддержка разработчика плагина</a></li>
+    <li>
+        <a target="_blank" href="http://support.wa-plugins.ru/">
+            <i class="icon16 ss pt hammer"></i>Поддержка разработчика плагина
+        </a>
+    </li>
 </ul>
-
 
 
 <div class="block double-padded" id="s-updateproducts-form">
@@ -18,7 +22,8 @@
                 <div class="field js-profile-description">
                     <div class="name">Название профиля</div>
                     <div class="value">
-                        <input type="text" name="profile[name]" value="{$profile.name|default:''|escape}" placeholder="Название профиля" id="s-plugin-updateproducts-profile-name">
+                        <input type="text" name="profile[name]" value="{$profile.name|default:''|escape}"
+                               placeholder="Название профиля" id="s-plugin-updateproducts-profile-name">
                         <input type="hidden" name="profile[id]" value="{$profile.id|default:'-1'}">
                     </div>
                 </div>
@@ -26,8 +31,9 @@
                 <div class="field js-profile-description">
                     <div class="name">Команда для запуска через CRON</div>
                     <div class="value">
-                        <input type="text" readonly="readonly" value="{$cron_str|default:''|escape}">
-                        <p class="hint">Команда для запуска обновления товаров по рассписанию, через планировщик задач CRON</p>
+                        <strong>{$cron_str|default:''}</strong>
+                        <p class="hint">Команда для запуска обновления товаров по рассписанию, через планировщик задач
+                            CRON</p>
                     </div>
                 </div>
             </div>
@@ -42,7 +48,8 @@
                         Номер листа
                     </div>
                     <div class="value">
-                        <input type="number" min="1" name="settings[price_list][list_num]" value="{$profile.config.price_list.list_num|default:'1'|escape}" />
+                        <input type="number" min="1" name="settings[price_list][list_num]"
+                               value="{$profile.config.price_list.list_num|default:'1'|escape}"/>
                         <p class="hint">Порядковый номер листа в документе EXCEL</p>
                     </div>
                 </div>
@@ -51,7 +58,8 @@
                         Номер строки, с которой начинается загрузка
                     </div>
                     <div class="value">
-                        <input type="number" min="1" name="settings[price_list][row_num]" value="{$profile.config.price_list.row_num|default:'1'|escape}" />
+                        <input type="number" min="1" name="settings[price_list][row_num]"
+                               value="{$profile.config.price_list.row_num|default:'1'|escape}"/>
                         <p class="hint">Порядковый номер строки, с которой ночинается обработка прайс-листа</p>
                     </div>
                 </div>
@@ -60,7 +68,8 @@
                         Количество обрабатываемых строк
                     </div>
                     <div class="value">
-                        <input type="number" min="0" name="settings[price_list][row_count]" value="{$profile.config.price_list.row_count|default:0|escape}" />
+                        <input type="number" min="0" name="settings[price_list][row_count]"
+                               value="{$profile.config.price_list.row_count|default:0|escape}"/>
                         <p class="hint">Если 0, то обрабатываются все строки до конца файла</p>
                     </div>
                 </div>
@@ -68,23 +77,24 @@
 
             <div class="field-group">
                 <h2 class="gray">Настройки столбцов из прайс-листа</h2>
-                <p class="hint">Сопоставление столбцов из прайс-листа с соответствующими полями товаров интернет-магазина</p>
+                <p class="hint">Сопоставление столбцов из прайс-листа с соответствующими полями товаров
+                    интернет-магазина</p>
                 <table id="price-data" class="zebra">
                     <tbody>
-                        <tr class="header">
-                            <th>
-                                <b>Характеристика</b><br>Название характеристики товара
-                            </th>
-                            <th>
-                                <b>Номер столбца,</b><br>в котором содержится характеристика
-                            </th>
-                            <th>
-                                <b>Обновление</b><br>Данная характеристика будет обновлена
-                            </th>
-                            <th>
-                                <b>Ключ</b><br>Поле является ключем для поиска SKU-товаров
-                            </th>
-                        </tr>
+                    <tr class="header">
+                        <th>
+                            <b>Характеристика</b><br>Название характеристики товара
+                        </th>
+                        <th>
+                            <b>Номер столбца,</b><br>в котором содержится характеристика
+                        </th>
+                        <th>
+                            <b>Обновление</b><br>Данная характеристика будет обновлена
+                        </th>
+                        <th>
+                            <b>Ключ</b><br>Поле является ключем для поиска SKU-товаров
+                        </th>
+                    </tr>
                     </tbody>
                     {foreach $data_columns as $key => $column}
                         <tr{if strpos($key, 'feature') !== false} class="column-feature-row"{/if}>
@@ -92,16 +102,19 @@
                                 {$column.name}
                             </td>
                             <td class="align-center">
-                                <input type="text" class="short" name="settings[map][columns][{$key}]" value="{$profile.config.map.columns[$key]|default:''|escape}" />
+                                <input type="text" class="short" name="settings[map][columns][{$key}]"
+                                       value="{$profile.config.map.columns[$key]|default:''|escape}"/>
                             </td>
                             <td class="align-center">
                                 {if $column.update}
-                                    <input type="checkbox" name="settings[map][update][{$key}]" value="1"{if $profile.config.map.update[$key]|default:0} checked="checked"{/if} />
+                                    <input type="checkbox" name="settings[map][update][{$key}]"
+                                           value="1"{if $profile.config.map.update[$key]|default:0} checked="checked"{/if} />
                                 {/if}
                             </td>
                             <td class="align-center">
                                 {if $column.key}
-                                    <input type="checkbox" name="settings[map][keys][{$key}]" value="1"{if $profile.config.map.keys[$key]|default:0} checked="checked"{/if} />
+                                    <input type="checkbox" name="settings[map][keys][{$key}]"
+                                           value="1"{if $profile.config.map.keys[$key]|default:0} checked="checked"{/if} />
                                 {/if}
                             </td>
                         </tr>
@@ -115,10 +128,8 @@
             </div>
 
 
-
-
-            <div class="field-group">
-                <h2 class="gray">Фильтры товаров</h2>
+            <h2 class="gray collapse-handler">Фильтры товаров <i class="icon16 rarr"></i></h2>
+            <div class="field-group" style="display: none">
                 <div class="field">
                     <div class="name">
                         Тип товаров
@@ -127,7 +138,9 @@
                         {foreach $product_types as $key => $product_type}
                             <div{if $product_type@iteration > 5} class="hidden-feature"{/if}>
                                 <i class="icon16 {$product_type.icon}"></i>
-                                <input type="checkbox" name="settings[filter][types][{$key}]" value="1"{if $profile.config.filter.types[$key]|default:0} checked="checked"{/if} /> - {$product_type.name}
+                                <input type="checkbox" name="settings[filter][types][{$key}]"
+                                       value="1"{if $profile.config.filter.types[$key]|default:0} checked="checked"{/if} />
+                                - {$product_type.name}
                             </div>
                             {if $product_type@iteration == 5 && !$product_type@last}
                                 <a href="#" class="features-show-all">Показать все...</a>
@@ -135,8 +148,10 @@
                         {/foreach}
                         <p class="hint">
                             Укажите типы товаров, которые будут участвовать в обновление.<br/>
-                            Если не указан ни один из типов товаров, то поиск товаров для обновления осуществляется по всем товарам.<br/>
-                            <b>Указывать типы товаров следует при необходимости ограничить выборку товаров для обновления только указанными типами товаров!</b>
+                            Если не указан ни один из типов товаров, то поиск товаров для обновления осуществляется по
+                            всем товарам.<br/>
+                            <b>Указывать типы товаров следует при необходимости ограничить выборку товаров для
+                                обновления только указанными типами товаров!</b>
                         </p>
                     </div>
                 </div>
@@ -148,7 +163,9 @@
                     <div class="value">
                         {foreach $sets as $key => $set}
                             <div{if $set@iteration > 5} class="hidden-feature"{/if}>
-                                <input type="checkbox" name="settings[filter][sets][{$key}]" value="1"{if $profile.config.filter.sets[$key]|default:0} checked="checked"{/if} /> - {$set.name}
+                                <input type="checkbox" name="settings[filter][sets][{$key}]"
+                                       value="1"{if $profile.config.filter.sets[$key]|default:0} checked="checked"{/if} />
+                                - {$set.name}
                             </div>
                             {if $set@iteration == 5 && !$set@last}
                                 <a href="#" class="features-show-all">Показать все...</a>
@@ -156,8 +173,10 @@
                         {/foreach}
                         <p class="hint">
                             Укажите списки товаров, которые будут участвовать в обновление.<br/>
-                            Если не указан ни один список товаров, то поиск товаров для обновления осуществляется по всем товарам.<br/>
-                            <b>Указывать списки товаров следует при необходимости ограничить выборку товаров для обновления только указанными списками!</b>
+                            Если не указан ни один список товаров, то поиск товаров для обновления осуществляется по
+                            всем товарам.<br/>
+                            <b>Указывать списки товаров следует при необходимости ограничить выборку товаров для
+                                обновления только указанными списками!</b>
                         </p>
                     </div>
                 </div>
@@ -169,46 +188,61 @@
                         <div id="features-table">
                             <table class="zebra">
                                 <thead>
-                                    <tr class="header">
-                                        <th>
-                                            <b>Характеристика</b>
-                                        </th>
-                                        <th>
-                                            <b>Значение</b>
-                                        </th>
-                                    </tr>
+                                <tr class="header">
+                                    <th>
+                                        <b>Характеристика</b>
+                                    </th>
+                                    <th>
+                                        <b>Значения</b>
+                                    </th>
+                                </tr>
                                 </thead>
                                 <tbody>
-                                    {foreach $features as $feature}
-                                        <tr>
-                                            <td>
-                                                {$feature.name}
-                                            </td>
-                                            <td>
-                                                <input class="select-all-features" type="checkbox"> - Выбрать все
-                                                <hr/>
-                                                {foreach $feature.values as $value_id => $value}
-                                                    <div{if $value@iteration > 5} class="hidden-feature"{/if}>
-                                                        <input type="checkbox" name="settings[filter][features][{$feature.id}][]" value="{$value_id}"{if !empty($profile.config.filter.features[$feature.id]) && in_array($value_id, $profile.config.filter.features[$feature.id])} checked="checked"{/if}> - {$value}<br/>
-                                                    </div>
-                                                    {if $value@iteration == 5 && !$value@last}
-                                                        <a href="#" class="features-show-all">Показать все...</a>
-                                                    {/if}
-                                                {/foreach}
-                                            </td>
-                                        </tr>
-                                    {/foreach}
+                                {foreach $features as $feature}
+                                    <tr>
+                                        <td>
+                                            {$feature.name}
+                                        </td>
+                                        <td>
+
+                                            <strong class="feature-values-handler" data-feature-id="{$feature.id}">
+                                                Значения <i class="icon16 rarr"></i>
+                                            </strong>
+                                            <div class="selected-values">
+                                                {if !empty($profile.config.filter.features[$feature.id])}
+                                                    <ul class="menu-v with-icons">
+                                                        {foreach $profile.config.filter.features[$feature.id] as $v_id}
+                                                            {if !empty($feature_values[$v_id])}
+                                                                <li>
+                                                                    <label>
+                                                                        <input type="checkbox"
+                                                                               name="settings[filter][features][{$feature.id}][]"
+                                                                               value="{$v_id}" checked>
+                                                                        - {$feature_values[$v_id]}
+                                                                    </label>
+                                                                </li>
+                                                            {/if}
+                                                        {/foreach}
+                                                    </ul>
+                                                {/if}
+                                            </div>
+                                        </td>
+                                    </tr>
+                                {/foreach}
                                 </tbody>
                             </table>
                         </div>
                         <p class="hint">
                             По указанным характеристикам ведется поиск товаров для обновления<br/>
-                            Если не выбрана ни одна характеристика, то в обновление участвуют товары с любыми доступными характеристиками<br/>
-                            <b>Указывать характеристики товаров следует при необходимости ограничить выборку товаров для обновления только товарами с указанными характеристиками!</b>
+                            Если не выбрана ни одна характеристика, то в обновление участвуют товары с любыми доступными
+                            характеристиками<br/>
+                            <b>Указывать характеристики товаров следует при необходимости ограничить выборку товаров для
+                                обновления только товарами с указанными характеристиками!</b>
                         </p>
                     </div>
                 </div>
             </div>
+            <br/><br/>
 
             <div class="field-group">
                 <h2 class="gray">Настройки обновления</h2>
@@ -218,9 +252,12 @@
                     </div>
                     <div class="value">
                         <select name="settings[update][stock_id]">
-                            <option{if !$profile.config.update.stock_id|default:0} selected="selected"{/if} value="0">По умолчанию</option>
+                            <option{if !$profile.config.update.stock_id|default:0} selected="selected"{/if} value="0">По
+                                умолчанию
+                            </option>
                             {foreach $stocks as $stock}
-                                <option{if $profile.config.update.stock_id|default:0 == $stock.id} selected="selected"{/if} value="{$stock.id}">{$stock.name}</option>
+                                <option{if $profile.config.update.stock_id|default:0 == $stock.id} selected="selected"{/if}
+                                        value="{$stock.id}">{$stock.name}</option>
                             {/foreach}
                         </select>
                     </div>
@@ -230,9 +267,11 @@
                         Скрывать товары
                     </div>
                     <div class="value">
-                        <input type="hidden" name="settings[update][set_product_status]" value="0" />
-                        <input{if $profile.config.update.set_product_status|default:0} checked="checked"{/if} type="checkbox" name="settings[update][set_product_status]" value="1" />
-                        <p class="hint">При загрузке прайс-листа плагин установит для всех товаров стутус "Скрытый", а для товаров из прайс-листа с ненулевым остатком "Опубликован"</p>
+                        <input type="hidden" name="settings[update][set_product_status]" value="0"/>
+                        <input{if $profile.config.update.set_product_status|default:0} checked="checked"{/if}
+                                type="checkbox" name="settings[update][set_product_status]" value="1"/>
+                        <p class="hint">При загрузке прайс-листа плагин установит для всех товаров стутус "Скрытый", а
+                            для товаров из прайс-листа с ненулевым остатком "Опубликован"</p>
                     </div>
                 </div>
                 <div class="field">
@@ -240,9 +279,12 @@
                         Обнулить количество товаров перед загрузкой
                     </div>
                     <div class="value">
-                        <input type="hidden" name="settings[update][set_product_null]" value="0" />
-                        <input{if $profile.config.update.set_product_null|default:0} checked="checked"{/if} type="checkbox" name="settings[update][set_product_null]" value="1" />
-                        <p class="hint">При загрузке прайс-листа плагин установит для всех товаров нулевое количество товаров, а для товаров из прайс-листа с ненулевым остатком устанавливается значение из файла</p>
+                        <input type="hidden" name="settings[update][set_product_null]" value="0"/>
+                        <input{if $profile.config.update.set_product_null|default:0} checked="checked"{/if}
+                                type="checkbox" name="settings[update][set_product_null]" value="1"/>
+                        <p class="hint">При загрузке прайс-листа плагин установит для всех товаров нулевое количество
+                            товаров, а для товаров из прайс-листа с ненулевым остатком устанавливается значение из
+                            файла</p>
                     </div>
                 </div>
                 <div class="field">
@@ -250,9 +292,12 @@
                         Установить по умолчанию артикул с ненулевым количеством
                     </div>
                     <div class="value">
-                        <input type="hidden" name="settings[update][set_not_null_sku]" value="0" />
-                        <input{if $profile.config.update.set_not_null_sku|default:0} checked="checked"{/if} type="checkbox" name="settings[update][set_not_null_sku]" value="1" />
-                        <p class="hint">После обновления товаров по прайс листу, плагин выполняет проверку: имеет ли артикул по умолчанию не нулевое количество. Eсли нет, тогда плагин пытается найти артикул с ненулевым количеством и устанавливает его в качестве артикула по умолчанию</p>
+                        <input type="hidden" name="settings[update][set_not_null_sku]" value="0"/>
+                        <input{if $profile.config.update.set_not_null_sku|default:0} checked="checked"{/if}
+                                type="checkbox" name="settings[update][set_not_null_sku]" value="1"/>
+                        <p class="hint">После обновления товаров по прайс листу, плагин выполняет проверку: имеет ли
+                            артикул по умолчанию не нулевое количество. Eсли нет, тогда плагин пытается найти артикул с
+                            ненулевым количеством и устанавливает его в качестве артикула по умолчанию</p>
                     </div>
                 </div>
                 <div class="field">
@@ -266,7 +311,9 @@
                                 <option value="{$currency.code}"{if $profile.config.update.currency|default:'' == $currency.code} selected="selected"{/if}>{$currency.title}</option>
                             {/foreach}
                         </select>
-                        <p class="hint">Если в прайс-листе товары указаны в основной валюте, выбирите "Без конвертации".<br/>Если в прайс-листе, товары указаны не в основной валюте интернет-магазина, тогда укажите эту валюту валюту. Товары будут переконвентированы из указанной валюты в основную.</p>
+                        <p class="hint">Если в прайс-листе товары указаны в основной валюте, выбирите "Без конвертации".<br/>Если
+                            в прайс-листе, товары указаны не в основной валюте интернет-магазина, тогда укажите эту
+                            валюту валюту. Товары будут переконвентированы из указанной валюты в основную.</p>
                     </div>
                 </div>
                 <div class="field">
@@ -275,10 +322,18 @@
                     </div>
                     <div class="value">
                         <select name="settings[update][rounding]">
-                            <option{if $profile.config.update.rounding|default:'' == ''} selected="selected"{/if} value="">Без округления</option>
-                            <option{if $profile.config.update.rounding|default:'' == 'round'} selected="selected"{/if} value="round">Арифметическое округление с заданной точностью</option>
-                            <option{if $profile.config.update.rounding|default:'' == 'ceil'} selected="selected"{/if} value="ceil">Округление до целого в большую сторону</option>
-                            <option{if $profile.config.update.rounding|default:'' == 'floor'} selected="selected"{/if} value="floor">Округление до целого в меньшую сторону</option>
+                            <option{if $profile.config.update.rounding|default:'' == ''} selected="selected"{/if}
+                                    value="">Без округления
+                            </option>
+                            <option{if $profile.config.update.rounding|default:'' == 'round'} selected="selected"{/if}
+                                    value="round">Арифметическое округление с заданной точностью
+                            </option>
+                            <option{if $profile.config.update.rounding|default:'' == 'ceil'} selected="selected"{/if}
+                                    value="ceil">Округление до целого в большую сторону
+                            </option>
+                            <option{if $profile.config.update.rounding|default:'' == 'floor'} selected="selected"{/if}
+                                    value="floor">Округление до целого в меньшую сторону
+                            </option>
                         </select>
                     </div>
                 </div>
@@ -287,7 +342,8 @@
                         Округление. Точность
                     </div>
                     <div class="value">
-                        <input type="text" class="short" name="settings[update][round_precision]" value="{$profile.config.update.round_precision|default:0|escape}" />
+                        <input type="text" class="short" name="settings[update][round_precision]"
+                               value="{$profile.config.update.round_precision|default:0|escape}"/>
                         <p class="hint">Количество знаков после запятой</p>
                     </div>
                 </div>
@@ -298,28 +354,10 @@
                     </div>
                     <div class="value">
                         <input type="hidden" name="settings[update][calculation_purchase_price]" value="0"/>
-                        <input type="checkbox" name="settings[update][calculation_purchase_price]" value="1"{if $profile.config.update.calculation_purchase_price|default:0} checked="checked"{/if} />
-                        <p class="hint">Закупочная цена вычисляется по основной цене путем добавления наценки(установки скидки)</p>
-                    </div>
-                </div>
-                <div class="field">
-                    <div class="name">
-                        Логирование изменение остатков на складе
-                    </div>
-                    <div class="value">
-                        <div>
-                            <input name="settings[update][stock_log]" type="radio" value="delete_all"{if $profile.config.update.stock_log|default:'not_delete' == 'delete_all'} checked="checked"{/if}/> - удалить всю историю изменений остатков
-                        </div>
-                        <div>
-                            <input name="settings[update][stock_log]" type="radio" value="delete_all_other_current"{if $profile.config.update.stock_log|default:'not_delete' == 'delete_all_other_current'} checked="checked"{/if}/> - удалить всю историю изменений остатков, оставить только изменения, связанные с текущим обновлением
-                        </div>
-                        <div>
-                            <input name="settings[update][stock_log]" type="radio" value="not_delete"{if $profile.config.update.stock_log|default:'not_delete' == 'not_delete'} checked="checked"{/if}/> - ничего не удалять
-                        </div>
-                        <br/>
-                        <a href="#" class="clear-stock-log"><i class="icon16 cross"></i>Очистить историю изменения остатков</a>
-
-
+                        <input type="checkbox" name="settings[update][calculation_purchase_price]"
+                               value="1"{if $profile.config.update.calculation_purchase_price|default:0} checked="checked"{/if} />
+                        <p class="hint">Закупочная цена вычисляется по основной цене путем добавления наценки(установки
+                            скидки)</p>
                     </div>
                 </div>
                 <div class="field calculation-purchase-price-field">
@@ -327,8 +365,12 @@
                         Тип наценки
                     </div>
                     <div class="value">
-                        <input type="radio" class="short" name="settings[update][purchase_margin_type]" value="percent"{if $profile.config.update.purchase_margin_type|default:'percent' == 'percent'} checked="checked"{/if} />- процентная<br/>
-                        <input type="radio" class="short" name="settings[update][purchase_margin_type]" value="fixed"{if $profile.config.update.purchase_margin_type|default:'percent' == 'fixed'} checked="checked"{/if} />- фиксированная
+                        <input type="radio" class="short" name="settings[update][purchase_margin_type]"
+                               value="percent"{if $profile.config.update.purchase_margin_type|default:'percent' == 'percent'} checked="checked"{/if} />-
+                        процентная<br/>
+                        <input type="radio" class="short" name="settings[update][purchase_margin_type]"
+                               value="fixed"{if $profile.config.update.purchase_margin_type|default:'percent' == 'fixed'} checked="checked"{/if} />-
+                        фиксированная
                     </div>
                 </div>
                 <div class="field calculation-purchase-price-field">
@@ -336,15 +378,16 @@
                         Наценка
                     </div>
                     <div class="value">
-                        <input type="text" class="short" name="settings[update][purchase_margin]" value="{$profile.config.update.purchase_margin|default:0|escape}" />
+                        <input type="text" class="short" name="settings[update][purchase_margin]"
+                               value="{$profile.config.update.purchase_margin|default:0|escape}"/>
                         <p class="hint">Размер наценки</p>
                     </div>
                 </div>
 
             </div>
 
-            <div class="field-group">
-                <h2 class="gray">Наценка</h2>
+            <h2 class="gray collapse-handler">Наценка <i class="icon16 rarr"></i></h2>
+            <div class="field-group" style="display: none">
                 <div class="field">
                     <div class="name">
                         Наценка
@@ -352,55 +395,63 @@
                     <div class="value">
                         <table id="margin-table" class="zebra">
                             <thead>
-                                <tr class="header">
-                                    <th>
-                                        <b>Цена</b>
-                                    </th>
-                                    <th>
-                                        <b>Тип</b>
-                                    </th>
-                                    <th>
-                                        <b>Значение</b>
-                                    </th>
-                                    <th>
-                                        <b>Удалить правило</b>
-                                    </th>
-                                </tr>
+                            <tr class="header">
+                                <th>
+                                    <b>Цена</b>
+                                </th>
+                                <th>
+                                    <b>Тип</b>
+                                </th>
+                                <th>
+                                    <b>Значение</b>
+                                </th>
+                                <th>
+                                    <b>Удалить правило</b>
+                                </th>
+                            </tr>
                             </thead>
                             <tbody>
-                                {if !empty($profile.config.update.margin_sum)}
-                                    {foreach $profile.config.update.margin_sum as $margin_id => $margin_sum}
-                                        {$margin_type = $profile.config.update.margin_type[$margin_id]|default:'absolute'}
-                                        {$margin_value = $profile.config.update.margin_value[$margin_id]|default:'0'}
-                                        <tr>
-                                            <td>
-                                                &ge;
-                                                <input type="text" name="settings[update][margin_sum][]" value="{$margin_sum|escape}" />
-                                            </td>
-                                            <td>
-                                                <select name="settings[update][margin_type][]">
-                                                    <option value="absolute"{if $margin_type == 'absolute'} selected="selected"{/if}>Абсолютная</option>
-                                                    <option value="percent"{if $margin_type == 'percent'} selected="selected"{/if}>Процентная</option>
-                                                </select>
-                                            </td>
-                                            <td>
-                                                <input type="text" name="settings[update][margin_value][]" value="{$margin_value|escape}" />
-                                            </td>
-                                            <td>
-                                                <a class="delete-margin-row-button" href="#"><i class="icon16 delete"></i></a>
-                                            </td>
-                                        </tr>
-                                    {/foreach}
-                                {/if}
+                            {if !empty($profile.config.update.margin_sum)}
+                                {foreach $profile.config.update.margin_sum as $margin_id => $margin_sum}
+                                    {$margin_type = $profile.config.update.margin_type[$margin_id]|default:'absolute'}
+                                    {$margin_value = $profile.config.update.margin_value[$margin_id]|default:'0'}
+                                    <tr>
+                                        <td>
+                                            &ge;
+                                            <input type="text" name="settings[update][margin_sum][]"
+                                                   value="{$margin_sum|escape}"/>
+                                        </td>
+                                        <td>
+                                            <select name="settings[update][margin_type][]">
+                                                <option value="absolute"{if $margin_type == 'absolute'} selected="selected"{/if}>
+                                                    Абсолютная
+                                                </option>
+                                                <option value="percent"{if $margin_type == 'percent'} selected="selected"{/if}>
+                                                    Процентная
+                                                </option>
+                                            </select>
+                                        </td>
+                                        <td>
+                                            <input type="text" name="settings[update][margin_value][]"
+                                                   value="{$margin_value|escape}"/>
+                                        </td>
+                                        <td>
+                                            <a class="delete-margin-row-button" href="#"><i
+                                                        class="icon16 delete"></i></a>
+                                        </td>
+                                    </tr>
+                                {/foreach}
+                            {/if}
                             </tbody>
                         </table>
                         <a id="add-margin-row-button" href="#"><i class="icon16 add"></i> Добавить правило</a>
                     </div>
                 </div>
             </div>
+            <br/><br/>
 
-            <div class="field-group">
-                <h2 class="gray">Замены</h2>
+            <h2 class="gray collapse-handler">Замены <i class="icon16 rarr"></i></h2>
+            <div class="field-group" style="display: none">
                 <div class="field">
                     <div class="name">
                         Количество товаров
@@ -408,56 +459,69 @@
                     <div class="value">
                         <table id="replace-data" class="zebra">
                             <thead>
-                                <tr class="header">
-                                    <th>
-                                        <b>Строка для поиска</b>
-                                    </th>
-                                    <th>
-                                        <b>Замена</b>
-                                    </th>
-                                    <th>
-                                        <b>Режим замены</b>
-                                    </th>
-                                    <th>
-                                        <b>Удалить правило</b>
-                                    </th>
-                                </tr>
+                            <tr class="header">
+                                <th>
+                                    <b>Строка для поиска</b>
+                                </th>
+                                <th>
+                                    <b>Замена</b>
+                                </th>
+                                <th>
+                                    <b>Режим замены</b>
+                                </th>
+                                <th>
+                                    <b>Удалить правило</b>
+                                </th>
+                            </tr>
                             </thead>
                             <tbody>
-                                {if !empty($profile.config.update.replace_count_search)}
-                                    {foreach $profile.config.update.replace_count_search as $replace_id => $replace_search}
-                                        {$replace_replace = $profile.config.update.replace_count_replace[$replace_id]|default:''}
-                                        {$replace_infinity = $profile.config.update.replace_count_infinity[$replace_id]|default:1}
-                                        <tr>
-                                            <td>
-                                                <input type="text" name="settings[update][replace_count_search][]" value="{$replace_search|escape}" />
-                                            </td>
-                                            <td>
-                                                <input type="hidden"{if $replace_infinity == 0} disabled="disabled"{/if} name="settings[update][replace_count_replace][]" value="{$replace_replace|escape}" />
-                                                <input type="text"{if $replace_infinity == 1} disabled="disabled"{/if} name="settings[update][replace_count_replace][]" value="{$replace_replace|escape}" />
-                                            </td>
-                                            <td>
-                                                <input type="hidden" name="settings[update][replace_count_infinity][]" value="0" {if $replace_infinity == 1}disabled="disabled"{/if} />
-                                                <input type="checkbox" name="settings[update][replace_count_infinity][]" value="1" {if $replace_infinity == 1}checked="checked"{/if} /> - бесконечное количество
-                                            </td>
-                                            <td>
-                                                <a class="delete-replace-count-row-button" href="#"><i class="icon16 delete"></i></a>
-                                            </td>
-                                        </tr>
-                                    {/foreach}
-                                {/if}
+                            {if !empty($profile.config.update.replace_count_search)}
+                                {foreach $profile.config.update.replace_count_search as $replace_id => $replace_search}
+                                    {$replace_replace = $profile.config.update.replace_count_replace[$replace_id]|default:''}
+                                    {$replace_infinity = $profile.config.update.replace_count_infinity[$replace_id]|default:1}
+                                    <tr>
+                                        <td>
+                                            <input type="text" name="settings[update][replace_count_search][]"
+                                                   value="{$replace_search|escape}"/>
+                                        </td>
+                                        <td>
+                                            <input type="hidden"{if $replace_infinity == 0} disabled="disabled"{/if}
+                                                   name="settings[update][replace_count_replace][]"
+                                                   value="{$replace_replace|escape}"/>
+                                            <input type="text"{if $replace_infinity == 1} disabled="disabled"{/if}
+                                                   name="settings[update][replace_count_replace][]"
+                                                   value="{$replace_replace|escape}"/>
+                                        </td>
+                                        <td>
+                                            <input type="hidden" name="settings[update][replace_count_infinity][]"
+                                                   value="0" {if $replace_infinity == 1}disabled="disabled"{/if} />
+                                            <input type="checkbox" name="settings[update][replace_count_infinity][]"
+                                                   value="1" {if $replace_infinity == 1}checked="checked"{/if} /> -
+                                            бесконечное количество
+                                        </td>
+                                        <td>
+                                            <a class="delete-replace-count-row-button" href="#"><i
+                                                        class="icon16 delete"></i></a>
+                                        </td>
+                                    </tr>
+                                {/foreach}
+                            {/if}
                             </tbody>
 
                         </table>
                         <a id="add-replace-count-row-button" href="#"><i class="icon16 add"></i> Добавить правило</a>
                         <p class="hint">
                             Список правил для замены количества товаров.<br/>
-                            Вы можете заменить заданное значение «Строка для поиска» на указанное в ручную значение «Замена» или на бесконечное количество товаров.<br/>
-                            Например, если в прайс-листе в колонке «Количество товаров» указано количество «Много», то строку «Много» вы можете заменить на количественное значение, например, 100 или 1000 или же установить бесконечное количество товаров.
+                            Вы можете заменить заданное значение «Строка для поиска» на указанное в ручную значение
+                            «Замена» или на бесконечное количество товаров.<br/>
+                            Например, если в прайс-листе в колонке «Количество товаров» указано количество «Много», то
+                            строку «Много» вы можете заменить на количественное значение, например, 100 или 1000 или же
+                            установить бесконечное количество товаров.
                         </p>
                     </div>
                 </div>
             </div>
+            <br/><br/>
 
             <div class="field-group">
                 <h2 class="gray">Загрузка прайс-листа</h2>
@@ -467,8 +531,12 @@
                     </div>
                     <div class="value no-shift">
                         <select name="settings[file][file_format]">
-                            <option {if $profile.config.file.file_format|default:'xls' == 'xls'}selected="selected"{/if} value="xls">Excel - xls/xlsx</option>
-                            <option {if $profile.config.file.file_format|default:'xls' == 'csv'}selected="selected"{/if} value="csv">CSV</option>
+                            <option {if $profile.config.file.file_format|default:'xls' == 'xls'}selected="selected"{/if}
+                                    value="xls">Excel - xls/xlsx
+                            </option>
+                            <option {if $profile.config.file.file_format|default:'xls' == 'csv'}selected="selected"{/if}
+                                    value="csv">CSV
+                            </option>
                         </select>
                         <p class="hint">
                             Укажите формат файла прайс-листа
@@ -484,7 +552,8 @@
                     <div class="value no-shift">
                         <select name="settings[file][csv_encoding]">
                             {foreach $encodings as $encoding}
-                                <option{if $profile.config.file.csv_encoding|default:'UTF-8' == $encoding} selected="selected"{/if} value="{$encoding}">{$encoding}</option>
+                                <option{if $profile.config.file.csv_encoding|default:'UTF-8' == $encoding} selected="selected"{/if}
+                                        value="{$encoding}">{$encoding}</option>
                             {/foreach}
                         </select>
                     </div>
@@ -495,7 +564,8 @@
                         CSV. Разделитель
                     </div>
                     <div class="value no-shift">
-                        <input type="text" name="settings[file][csv_delimiter]" value="{$profile.config.file.csv_delimiter|default:';'|escape}" />
+                        <input type="text" name="settings[file][csv_delimiter]"
+                               value="{$profile.config.file.csv_delimiter|default:';'|escape}"/>
                     </div>
                 </div>
                 <div class="field csv-field">
@@ -503,21 +573,8 @@
                         CSV. Ограничитель
                     </div>
                     <div class="value no-shift">
-                        <input type="text" name="settings[file][csv_enclosure]" value="{$profile.config.file.csv_enclosure|default:'"'|escape}" />
-                    </div>
-                </div>
-                <div class="field">
-                    <div class="name">
-                        Прайс-лист находится в архиве
-                    </div>
-                    <div class="value no-shift">
-                        <select name="settings[file][archive]">
-                            <option{if $profile.config.file.archive|default:'' == ''} selected="selected"{/if} value="">Без архива</option>
-                            <option{if $profile.config.file.archive|default:'' == 'zip'} selected="selected"{/if} value="zip">zip-архив</option>
-                        </select>
-                        <p class="hint">
-                            Если прайс-лист запакован в архив, укажите тип архива для того, чтобы плагин мог распаковать полученный архив.
-                        </p>
+                        <input type="text" name="settings[file][csv_enclosure]"
+                               value="{$profile.config.file.csv_enclosure|default:'"'|escape}"/>
                     </div>
                 </div>
                 <div class="field">
@@ -526,9 +583,12 @@
                     </div>
                     <div class="value no-shift">
                         <select name="settings[file][upload_type]">
-                            <option{if $profile.config.file.upload_type|default:'local' == 'local'} selected="selected"{/if} value="local">Загрузка файла с локального компьютера</option>
-                            <option{if $profile.config.file.upload_type|default:'local' == 'url'} selected="selected"{/if} value="url">Загрузка файла по ссылке</option>
-                            <option{if $profile.config.file.upload_type|default:'local' == 'email'} selected="selected"{/if} value="email">Загрузка файла через Email</option>
+                            <option{if $profile.config.file.upload_type|default:'local' == 'local'} selected="selected"{/if}
+                                    value="local">Загрузка файла с локального компьютера
+                            </option>
+                            <option{if $profile.config.file.upload_type|default:'local' == 'url'} selected="selected"{/if}
+                                    value="url">Загрузка файла по ссылке
+                            </option>
                         </select>
                         <p class="hint">
                             Укажите способ загрузки файла прайс-листа
@@ -536,46 +596,17 @@
                     </div>
                 </div>
 
-                <div class="field upload-file-field upload-file-email">
-                    <div class="name">
-                        Найстройки доступа к почтовому ящику
-                    </div>
-                    <div class="value no-shift">
-                        <p>
-                            Email<br/>
-                            <input type="text" name="settings[file][email_email]" value="{$profile.config.file.email_email|default:''|escape}" >
-                        </p>
-                        <p>
-                            Сервер<br/>
-                            <input type="text" name="settings[file][email_server]" value="{$profile.config.file.email_server|default:''|escape}" >
-                        </p>
-                        <p>
-                            Порт<br/>
-                            <input type="text" name="settings[file][email_port]" value="{$profile.config.file.email_port|default:'110'|escape}" >
-                        </p>
-                        <p>
-                            Логин<br/>
-                            <input type="text" name="settings[file][email_login]" value="{$profile.config.file.email_login|default:''|escape}" >
-                        </p>
-                        <p>
-                            Пароль<br/>
-                            <input type="text" name="settings[file][email_password]" value="{$profile.config.file.email_password|default:''|escape}" >
-                        </p>
-                        <p>
-                            SSL<br/>
-                            <input type="checkbox" name="settings[file][email_ssl]" value="1" {if $profile.config.file.email_ssl|default:0}checked="checked"{/if} >
-                        </p>
-                        <a data-action="?plugin=updateproducts&module=upload" class="upload-but" href="#"><i class="icon16 upload"></i>Загрузить</a>
-                    </div>
-                </div>
                 <div class="field upload-file-field upload-file-url">
                     <div class="name">
                         Ссылка на скачивание
                     </div>
                     <div class="value no-shift">
-                        <input type="text" name="settings[file][file_url]" id="image-url" value="{$profile.config.file.file_url|default:''|escape}" >
-                        <a data-action="?plugin=updateproducts&module=upload" class="upload-but" href="#"><i class="icon16 upload"></i>Загрузить</a>
-                        <p class="hint">Загрузка прайс-листа осуществляется по указанной ссылке. Это можно использовать для настройки автоматического обновления по расписанию через планировщик задач CRON</p>
+                        <input type="text" name="settings[file][file_url]" id="image-url"
+                               value="{$profile.config.file.file_url|default:''|escape}">
+                        <a data-action="?plugin=updateproducts&module=upload" class="upload-but" href="#"><i
+                                    class="icon16 upload"></i>Загрузить</a>
+                        <p class="hint">Загрузка прайс-листа осуществляется по указанной ссылке. Это можно использовать
+                            для настройки автоматического обновления по расписанию через планировщик задач CRON</p>
                     </div>
                 </div>
                 <div class="field upload-file-field upload-file-local">
@@ -583,7 +614,8 @@
                         Выберите Файл
                     </div>
                     <div class="value no-shift">
-                        <input type="file" name="" class="fileupload" data-action="?plugin=updateproducts&module=upload">
+                        <input type="file" name="" class="fileupload"
+                               data-action="?plugin=updateproducts&module=upload">
                         <div id="upload-progressbar" class="progressbar blue" style="display: none; width: 70%;">
                             <div class="progressbar-outer">
                                 <div class="progressbar-inner" style="width: 0;"></div>
@@ -594,20 +626,22 @@
                 <div class="field">
                     <div class="value no-shift">
                         <div class="js-fileupload-progress" style="display:none;"></div>
-                        <span class="errormsg" style="display:none;"><br><br><i class="icon10 no"></i> <span></span></span>
+                        <span class="errormsg" style="display:none;"><br><br><i
+                                    class="icon10 no"></i> <span></span></span>
                     </div>
                 </div>
             </div>
 
-            <div class="field-group">
-                <h2 class="gray">Отчет</h2>
+            <h2 class="gray collapse-handler">Отчет <i class="icon16 rarr"></i></h2>
+            <div class="field-group" style="display: none">
                 <div class="field">
                     <div class="name">
                         Отправлять отчет на почту
                     </div>
                     <div class="value no-shift">
                         <input type="hidden" name="settings[report][report]" value="0"/>
-                        <input type="checkbox" name="settings[report][report]" value="1" {if $profile.config.report.report|default:0}checked="checked"{/if} />
+                        <input type="checkbox" name="settings[report][report]" value="1"
+                               {if $profile.config.report.report|default:0}checked="checked"{/if} />
                     </div>
                 </div>
                 <div class="field">
@@ -615,12 +649,13 @@
                         Email адрес для отправки
                     </div>
                     <div class="value no-shift">
-                        <input type="text" name="settings[report][report_email]" value="{$profile.config.report.report_email|default:''|escape}" />
+                        <input type="text" name="settings[report][report_email]"
+                               value="{$profile.config.report.report_email|default:''|escape}"/>
                         <p class="hint">Можно указать несколько адресов через запятую</p>
                     </div>
                 </div>
             </div>
-
+            <br/><br/>
 
 
             <div class="clear-left"></div>
@@ -631,7 +666,8 @@
 
                     <input type="submit" class="button green" value="Обновить">
                     <br><br>
-                    <em class="small js-profile-notice">При экспорте изменения в настройках профиля будут сохранены и применены к последующим экспортам автоматически</em>
+                    <em class="small js-profile-notice">При экспорте изменения в настройках профиля будут сохранены и
+                        применены к последующим экспортам автоматически</em>
 
                     <div class="js-progressbar-container" style="display:none;">
                         <div class="progressbar blue float-left" style="display: none; width: 70%;">
@@ -660,7 +696,8 @@
                     <div class="value"></div>
                     <div class="value">
                         <br>
-                        <a href="?plugin=updateproducts&module=download&profile={$profile.id|default:''}" class="bold nowrap"><i class="icon16 download"></i>Ненайденные товары</a>
+                        <a href="?plugin=updateproducts&module=download&profile={$profile.id|default:''}"
+                           class="bold nowrap"><i class="icon16 download"></i>Ненайденные товары</a>
                     </div>
                 </div>
             </div>
@@ -691,6 +728,17 @@
         <a class="delete-margin-row-button" href="#"><i class="icon16 delete"></i></a>
         </td>
         </tr>
+
+
+
+
+
+
+
+
+
+
+
     </script>
     <script id="replace-count-row" type="text/x-jquery-tmpl">
         <tr>
@@ -709,6 +757,17 @@
         <a class="delete-replace-count-row-button" href="#"><i class="icon16 delete"></i></a>
         </td>
         </tr>
+
+
+
+
+
+
+
+
+
+
+
     </script>
 {/literal}
 <script type="text/javascript">
@@ -716,7 +775,7 @@
         $.importexport.plugins.updateproducts.init({$params|json_encode});
     } else {
 
-        $.getScript('{$wa_app_static_url}plugins/updateproducts/js/updateproducts.js', function () {
+        $.getScript('{$wa_app_static_url}plugins/updateproducts/js/updateproducts.js?{$plugin_version}', function () {
             $.importexport.plugins.updateproducts.init({$params|json_encode});
             $.importexport.plugins.updateproducts.initForm();
         });

@@ -42,7 +42,3 @@ table.zebra tr td.critical,table.zebra tr th.critical { background: #fcc; }
 .hidden-feature{
     display: none;
 }
-#features-table{
-    height: 500px;
-    overflow-y: scroll;
-}
