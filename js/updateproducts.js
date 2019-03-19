@@ -82,6 +82,10 @@ $.extend($.importexport.plugins, {
                 $(this).closest('tr').remove();
                 return false;
             });
+            $(document).on('click', '.delete-replace-sku-row-button', function () {
+                $(this).closest('tr').remove();
+                return false;
+            });
             $(document).on('change', 'input[name="settings[update][replace_count_infinity][]"][type=checkbox]', function () {
                 if ($(this).is(':checked')) {
                     $(this).closest('tr').find('input[name="settings[update][replace_count_replace][]"][type=text]').attr('disabled', 'disabled');
@@ -92,6 +96,19 @@ $.extend($.importexport.plugins, {
                     $(this).closest('tr').find('input[name="settings[update][replace_count_replace][]"][type=text]').removeAttr('disabled');
                     $(this).closest('tr').find('input[name="settings[update][replace_count_replace][]"][type=hidden]').attr('disabled', 'disabled');
                     $(this).closest('tr').find('input[name="settings[update][replace_count_infinity][]"][type=hidden]').removeAttr('disabled');
+                }
+                return false;
+            });
+            $(document).on('change', 'input[name="settings[update][replace_count_null][]"][type=checkbox]', function () {
+                if ($(this).is(':checked')) {
+                    $(this).closest('tr').find('input[name="settings[update][replace_count_search][]"][type=text]').attr('disabled', 'disabled');
+                    $(this).closest('tr').find('input[name="settings[update][replace_count_search][]"][type=hidden]').val($(this).closest('tr').find('input[name="settings[update][replace_count_search][]"][type=text]').val());
+                    $(this).closest('tr').find('input[name="settings[update][replace_count_search][]"][type=hidden]').removeAttr('disabled');
+                    $(this).closest('tr').find('input[name="settings[update][replace_count_null][]"][type=hidden]').attr('disabled', 'disabled');
+                } else {
+                    $(this).closest('tr').find('input[name="settings[update][replace_count_search][]"][type=text]').removeAttr('disabled');
+                    $(this).closest('tr').find('input[name="settings[update][replace_count_search][]"][type=hidden]').attr('disabled', 'disabled');
+                    $(this).closest('tr').find('input[name="settings[update][replace_count_null][]"][type=hidden]').removeAttr('disabled');
                 }
                 return false;
             });
@@ -107,6 +124,10 @@ $.extend($.importexport.plugins, {
 
             $('#add-replace-count-row-button').click(function () {
                 $('#replace-count-row').tmpl().appendTo('#replace-data tbody');
+                return false;
+            });
+            $('#add-replace-sku-row-button').click(function () {
+                $('#replace-sku-row').tmpl().appendTo('#replace-sku-data tbody');
                 return false;
             });
             $('input[name="settings[update][calculation_purchase_price]"]').change(function () {
@@ -353,7 +374,7 @@ $.extend($.importexport.plugins, {
 
             var data = this.form.serialize();
             this.form.find('.errormsg').text('');
-            this.form.find(':input').attr('disabled', true);
+            this.form.find(':input:not([disabled])').addClass('auto-disabled').attr('disabled', true);
             this.form.find('a.js-action:visible').data('visible', 1).hide();
             this.form.find(':submit').hide();
             this.form.find('#plugin-updateproducts-submit .progressbar .progressbar-inner').css('width', '0%');
@@ -368,7 +389,7 @@ $.extend($.importexport.plugins, {
                 success: function (response) {
                     console.log(response);
                     if (response.error) {
-                        self.form.find(':input').attr('disabled', false);
+                        self.form.find(':input.auto-disabled').attr('disabled', false);
                         self.form.find(':submit').show();
                         self.form.find('a.js-action:hidden').each(function () {
                             var $this = $(this);
@@ -405,7 +426,7 @@ $.extend($.importexport.plugins, {
                     } else {
                         self.form.find('#plugin-updateproducts-submit .errormsg').html('Ошибка: ' + response.status);
                     }
-                    self.form.find(':input').attr('disabled', false);
+                    self.form.find(':input.auto-disabled').attr('disabled', false);
                     self.form.find('a.js-action:hidden').each(function () {
                         var $this = $(this);
                         if ($this.data('visible')) {

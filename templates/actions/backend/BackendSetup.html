@@ -466,6 +466,7 @@
                                 <th>
                                     <b>Замена</b>
                                 </th>
+                                <th></th>
                                 <th>
                                     <b>Режим замены</b>
                                 </th>
@@ -479,10 +480,24 @@
                                 {foreach $profile.config.update.replace_count_search as $replace_id => $replace_search}
                                     {$replace_replace = $profile.config.update.replace_count_replace[$replace_id]|default:''}
                                     {$replace_infinity = $profile.config.update.replace_count_infinity[$replace_id]|default:1}
+                                    {$replace_null = $profile.config.update.replace_count_null[$replace_id]|default:0}
                                     <tr>
                                         <td>
-                                            <input type="text" name="settings[update][replace_count_search][]"
+                                            <input type="hidden"{if $replace_null == 0} disabled="disabled"{/if}
+                                                   name="settings[update][replace_count_search][]"
                                                    value="{$replace_search|escape}"/>
+                                            <input type="text"{if $replace_null == 1} disabled="disabled"{/if}
+                                                   name="settings[update][replace_count_search][]"
+                                                   value="{$replace_search|escape}"/>
+                                        </td>
+                                        <td>
+                                            <input type="hidden" name="settings[update][replace_count_null][]"
+                                                   value="0" {if $replace_null== 1}disabled="disabled"{/if} />
+                                            <label>
+                                                <input type="checkbox" name="settings[update][replace_count_null][]"
+                                                       value="1" {if $replace_null == 1}checked="checked"{/if} /> -
+                                                пустая ячейка
+                                            </label>
                                         </td>
                                         <td>
                                             <input type="hidden"{if $replace_infinity == 0} disabled="disabled"{/if}
@@ -495,9 +510,11 @@
                                         <td>
                                             <input type="hidden" name="settings[update][replace_count_infinity][]"
                                                    value="0" {if $replace_infinity == 1}disabled="disabled"{/if} />
-                                            <input type="checkbox" name="settings[update][replace_count_infinity][]"
-                                                   value="1" {if $replace_infinity == 1}checked="checked"{/if} /> -
-                                            бесконечное количество
+                                            <label>
+                                                <input type="checkbox" name="settings[update][replace_count_infinity][]"
+                                                       value="1" {if $replace_infinity == 1}checked="checked"{/if} /> -
+                                                бесконечное количество
+                                            </label>
                                         </td>
                                         <td>
                                             <a class="delete-replace-count-row-button" href="#"><i
@@ -517,6 +534,62 @@
                             Например, если в прайс-листе в колонке «Количество товаров» указано количество «Много», то
                             строку «Много» вы можете заменить на количественное значение, например, 100 или 1000 или же
                             установить бесконечное количество товаров.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="field">
+                    <div class="name">
+                        Артикул
+                    </div>
+                    <div class="value">
+                        <table id="replace-sku-data" class="zebra">
+                            <thead>
+                            <tr class="header">
+                                <th>
+                                    <b>Строка для поиска</b>
+                                </th>
+                                <th>
+                                    <b>Замена</b>
+                                </th>
+                                <th>
+                                    <b>Удалить правило</b>
+                                </th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            {if !empty($profile.config.update.replace_sku_search)}
+                                {foreach $profile.config.update.replace_sku_search as $replace_id => $replace_search}
+                                    {$replace_replace = $profile.config.update.replace_sku_replace[$replace_id]|default:''}
+                                    <tr>
+                                        <td>
+                                            <input type="text"
+                                                   name="settings[update][replace_sku_search][]"
+                                                   value="{$replace_search|escape}"/>
+                                        </td>
+                                        <td>
+                                            <input type="text"
+                                                   name="settings[update][replace_sku_replace][]"
+                                                   value="{$replace_replace|escape}"/>
+                                        </td>
+                                        <td>
+                                            <a class="delete-replace-sku-row-button" href="#"><i
+                                                        class="icon16 delete"></i></a>
+                                        </td>
+                                    </tr>
+                                {/foreach}
+                            {/if}
+                            </tbody>
+
+                        </table>
+                        <a id="add-replace-sku-row-button" href="#"><i class="icon16 add"></i> Добавить правило</a>
+                        <p class="hint">
+                            Список правил для замены артикулов товаров.<br/>
+                            Вы можете заменить заданное значение «Строка для поиска» на указанное в ручную значение
+                            «Замена».<br/>
+                            Например, если в прайс-листе в колонке «Артикул» указано «Canon 600EX-RT», а на сайте
+                            существует артикул «600EX-RT», то
+                            строку «Canon» можно удалить.
                         </p>
                     </div>
                 </div>
@@ -732,18 +805,16 @@
 
 
 
-
-
-
-
-
-
-
     </script>
     <script id="replace-count-row" type="text/x-jquery-tmpl">
         <tr>
         <td>
+        <input type="hidden" name="settings[update][replace_count_search][]" value="" />
         <input type="text" name="settings[update][replace_count_search][]" value="" />
+        </td>
+        <td>
+        <input type="hidden" name="settings[update][replace_count_null][]" value="0" disabled="disabled" />
+        <label><input type="checkbox" name="settings[update][replace_count_null][]" value="1" /> - пустая ячейка</label>
         </td>
         <td>
         <input type="hidden" name="settings[update][replace_count_replace][]" value="" />
@@ -751,7 +822,7 @@
         </td>
         <td>
         <input type="hidden" name="settings[update][replace_count_infinity][]" value="0" disabled="disabled" />
-        <input type="checkbox" name="settings[update][replace_count_infinity][]" value="1" checked="checked" /> - бесконечное количество
+        <label><input type="checkbox" name="settings[update][replace_count_infinity][]" value="1" checked="checked" /> - бесконечное количество</label>
         </td>
         <td>
         <a class="delete-replace-count-row-button" href="#"><i class="icon16 delete"></i></a>
@@ -759,15 +830,19 @@
         </tr>
 
 
-
-
-
-
-
-
-
-
-
+    </script>
+    <script id="replace-sku-row" type="text/x-jquery-tmpl">
+        <tr>
+        <td>
+        <input type="text" name="settings[update][replace_sku_search][]" value="" />
+        </td>
+        <td>
+        <input type="text" name="settings[update][replace_sku_replace][]" value="" />
+        </td>
+        <td>
+        <a class="delete-replace-sku-row-button" href="#"><i class="icon16 delete"></i></a>
+        </td>
+        </tr>
     </script>
 {/literal}
 <script type="text/javascript">

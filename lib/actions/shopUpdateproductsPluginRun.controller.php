@@ -1,6 +1,7 @@
 <?php
 
-class shopUpdateproductsPluginRunController extends waLongActionController {
+class shopUpdateproductsPluginRunController extends waLongActionController
+{
 
     const STAGE_RECALCULATION = 'recalculation';
     const STAGE_UPDATEPRODUCTS = 'updateproduct';
@@ -8,7 +9,8 @@ class shopUpdateproductsPluginRunController extends waLongActionController {
 
     protected $sheet;
 
-    protected function preExecute() {
+    protected function preExecute()
+    {
         $this->getResponse()->addHeader('Content-type', 'application/json');
         $this->getResponse()->sendHeaders();
     }
@@ -23,7 +25,8 @@ class shopUpdateproductsPluginRunController extends waLongActionController {
      *
      * @return shopUpdateproductsPlugin
      */
-    private function plugin() {
+    private function plugin()
+    {
         static $plugin;
         if (!$plugin) {
             $plugin = wa()->getPlugin('updateproducts');
@@ -31,7 +34,8 @@ class shopUpdateproductsPluginRunController extends waLongActionController {
         return $plugin;
     }
 
-    public function execute() {
+    public function execute()
+    {
         error_reporting(E_ALL);
         ini_set('display_errors', 'On');
         try {
@@ -45,7 +49,8 @@ class shopUpdateproductsPluginRunController extends waLongActionController {
         }
     }
 
-    protected function isDone() {
+    protected function isDone()
+    {
         $done = true;
         foreach ($this->data['current'] as $stage => $current) {
             if ($current < $this->data['count'][$stage]) {
@@ -56,7 +61,8 @@ class shopUpdateproductsPluginRunController extends waLongActionController {
         return $done;
     }
 
-    private function getNextStep($current_key) {
+    private function getNextStep($current_key)
+    {
         $array_keys = array_keys($this->steps);
         $current_key_index = array_search($current_key, $array_keys);
         if (isset($array_keys[$current_key_index + 1])) {
@@ -66,9 +72,10 @@ class shopUpdateproductsPluginRunController extends waLongActionController {
         }
     }
 
-    protected function step() {
+    protected function step()
+    {
         $stage = $this->data['stage'];
-       
+
         if ($this->data['current'][$stage] >= $this->data['count'][$stage]) {
             $this->data['stage'] = $this->getNextStep($this->data['stage']);
         }
@@ -92,7 +99,8 @@ class shopUpdateproductsPluginRunController extends waLongActionController {
         return true;
     }
 
-    protected function finish($filename) {
+    protected function finish($filename)
+    {
         $this->info();
         if ($this->getRequest()->post('cleanup')) {
             @unlink($this->data['filepath']);
@@ -104,9 +112,10 @@ class shopUpdateproductsPluginRunController extends waLongActionController {
         return false;
     }
 
-    protected function report() {
+    protected function report()
+    {
         $report = '<div class="successmsg"><i class="icon16 yes"></i> ' .
-                'Обновлено товаров ' . $this->data['updated'] . ' из ' . $this->data['count'][self::STAGE_UPDATEPRODUCTS] . '. Товаров не найдено ' . $this->data['not_found'];
+            'Обновлено товаров ' . $this->data['updated'] . ' из ' . $this->data['count'][self::STAGE_UPDATEPRODUCTS] . '. Товаров не найдено ' . $this->data['not_found'];
         $interval = 0;
         if (!empty($this->data['timestamp'])) {
             $interval = time() - $this->data['timestamp'];
@@ -134,7 +143,8 @@ class shopUpdateproductsPluginRunController extends waLongActionController {
         return $report;
     }
 
-    protected function info() {
+    protected function info()
+    {
 
         $interval = 0;
         if (!empty($this->data['timestamp'])) {
@@ -166,11 +176,13 @@ class shopUpdateproductsPluginRunController extends waLongActionController {
         echo json_encode($response);
     }
 
-    protected function restore() {
+    protected function restore()
+    {
         $this->sheet = $this->getExcelSheet($this->data['filepath'], $this->data['profile_config']);
     }
 
-    private function getExcelSheet($filepath, $profile_config) {
+    private function getExcelSheet($filepath, $profile_config)
+    {
         if (!file_exists($filepath)) {
             throw new waException('Ошибка загрузки файла');
         }
@@ -202,12 +214,13 @@ class shopUpdateproductsPluginRunController extends waLongActionController {
         return $sheet;
     }
 
-    protected function init() {
+    protected function init()
+    {
         try {
             $backend = (wa()->getEnv() == 'backend');
             $profiles = new shopImportexportHelper('updateproducts');
             if ($backend) {
-                $profile_config = (array) waRequest::post('settings', array());
+                $profile_config = (array)waRequest::post('settings', array());
                 $profile_id = $profiles->setConfig($profile_config);
                 $this->plugin()->getHash($profile_id);
             } else {
@@ -311,7 +324,8 @@ class shopUpdateproductsPluginRunController extends waLongActionController {
         }
     }
 
-    private function createTmpTable() {
+    private function createTmpTable()
+    {
         $profile_config = $this->data['profile_config'];
 
         $model = new waModel();
@@ -348,7 +362,8 @@ class shopUpdateproductsPluginRunController extends waLongActionController {
         $model->exec($sql);
     }
 
-    public function recalculationProducts() {
+    public function recalculationProducts()
+    {
         $model = new waModel();
         $profile_config = $this->data['profile_config'];
         $stock_id = $profile_config['update']['stock_id'];
@@ -399,10 +414,11 @@ class shopUpdateproductsPluginRunController extends waLongActionController {
             $model->exec($sql);
         }
 
-        $this->data['current'][self::STAGE_RECALCULATION] ++;
+        $this->data['current'][self::STAGE_RECALCULATION]++;
     }
 
-    private function isStockInfinity($sku_id) {
+    private function isStockInfinity($sku_id)
+    {
         $product_stocks_model = new shopProductStocksModel();
         $stocks = $product_stocks_model->getBySkuId($sku_id);
         if (!empty($stocks[$sku_id])) {
@@ -415,7 +431,8 @@ class shopUpdateproductsPluginRunController extends waLongActionController {
         return FALSE;
     }
 
-    private function getMarginPrice($value) {
+    private function getMarginPrice($value)
+    {
         $profile_config = $this->data['profile_config'];
         if (!empty($profile_config['update']['margin_sum'])) {
             arsort($profile_config['update']['margin_sum']);
@@ -435,7 +452,8 @@ class shopUpdateproductsPluginRunController extends waLongActionController {
         return $value;
     }
 
-    public function updateProducts() {
+    public function updateProducts()
+    {
         $model_sku = new shopProductSkusModel();
         $profile_config = $this->data['profile_config'];
 
@@ -496,9 +514,11 @@ class shopUpdateproductsPluginRunController extends waLongActionController {
                             if ($replace_search && strpos($value, $replace_search) !== false) {
                                 if (!empty($profile_config['update']['replace_count_infinity'][$replace_id])) {
                                     $value = '';
-                                } elseif (isset($profile_config['update']['replace_count_replace'][$replace_id])) {
+                                } elseif (!empty($profile_config['update']['replace_count_replace'][$replace_id])) {
                                     $value = str_replace($replace_search, $profile_config['update']['replace_count_replace'][$replace_id], $value);
                                 }
+                            } elseif (!trim($value) && !empty($profile_config['update']['replace_count_null'][$replace_id])) {
+                                $value = $profile_config['update']['replace_count_replace'][$replace_id];
                             }
                         }
                     }
@@ -524,7 +544,7 @@ class shopUpdateproductsPluginRunController extends waLongActionController {
             if ($this->isDebug()) {
                 waLog::log("\"" . $product->name . "\" обновлен", 'updateproduct.log');
             }
-            $this->data['updated'] ++;
+            $this->data['updated']++;
             if (!in_array($product->id, $this->data['updated_product_ids'])) {
                 $this->data['updated_product_ids'][] = $product->id;
             }
@@ -544,12 +564,13 @@ class shopUpdateproductsPluginRunController extends waLongActionController {
             if ($this->isDebug()) {
                 waLog::log("\"" . implode(';', $not_found_file) . "\" не найден", 'updateproduct.log');
             }
-            $this->data['not_found'] ++;
+            $this->data['not_found']++;
         }
-        $this->data['current'][self::STAGE_UPDATEPRODUCTS] ++;
+        $this->data['current'][self::STAGE_UPDATEPRODUCTS]++;
     }
 
-    public function setSkus() {
+    public function setSkus()
+    {
         $offet = $this->data['current'][self::STAGE_SETSKUS];
         $product_id = $this->data['updated_product_ids'][$offet];
         $product = new shopProduct($product_id);
@@ -569,21 +590,24 @@ class shopUpdateproductsPluginRunController extends waLongActionController {
                 $product->save();
             }
         }
-        $this->data['current'][self::STAGE_SETSKUS] ++;
+        $this->data['current'][self::STAGE_SETSKUS]++;
     }
 
-    protected function getSetIds($set_id) {
+    protected function getSetIds($set_id)
+    {
         $collection = new shopProductsCollection('set/' . $set_id);
         $products = $collection->getProducts('*', 0, 99999, true);
         return array_keys($products);
     }
 
-    protected function getColumnInfo($column) {
+    protected function getColumnInfo($column)
+    {
         list($type, $field) = explode(':', $column);
         return array('field' => $field, 'type' => $type);
     }
 
-    private function getSkuByFields() {
+    private function getSkuByFields()
+    {
         $profile_config = $this->data['profile_config'];
         $keys = $profile_config['map']['keys'];
 
@@ -626,7 +650,8 @@ class shopUpdateproductsPluginRunController extends waLongActionController {
         return $result;
     }
 
-    protected function getDataRow() {
+    protected function getDataRow()
+    {
         $row = array();
         $profile_config = $this->data['profile_config'];
 
@@ -640,7 +665,8 @@ class shopUpdateproductsPluginRunController extends waLongActionController {
         return $row;
     }
 
-    protected function getDataValue($key) {
+    protected function getDataValue($key)
+    {
         $profile_config = $this->data['profile_config'];
         $column = $profile_config['map']['columns'][$key];
 
@@ -654,13 +680,20 @@ class shopUpdateproductsPluginRunController extends waLongActionController {
                 $cell = $column['num'] . $iteration;
                 $value = trim($this->sheet->getCell($cell)->getValue());
             }
+
+
+            if ($key == 'sku:sku' && !empty($profile_config['update']['replace_sku_search'])) {
+                $value = trim(str_replace($profile_config['update']['replace_sku_search'], $profile_config['update']['replace_sku_replace'], $value));
+            }
+
         } catch (Exception $ex) {
-            
+
         }
         return $value;
     }
 
-    protected function getStocks($sku_id) {
+    protected function getStocks($sku_id)
+    {
         $stocks = array();
         $product_stocks = new shopProductStocksModel();
         $return = $product_stocks->getBySkuId($sku_id);
@@ -674,7 +707,8 @@ class shopUpdateproductsPluginRunController extends waLongActionController {
         return $stocks;
     }
 
-    protected function prepareSkus($skus) {
+    protected function prepareSkus($skus)
+    {
         foreach ($skus as &$sku) {
             if (!$sku['stock']) {
                 $sku['stock'][0] = is_null($sku['count']) ? '' : $sku['count'];
@@ -687,7 +721,8 @@ class shopUpdateproductsPluginRunController extends waLongActionController {
         return $skus;
     }
 
-    protected function inStock($skus) {
+    protected function inStock($skus)
+    {
         $in_stock = false;
         foreach ($skus as $sku) {
             foreach ($sku['stock'] as $stock) {
@@ -699,7 +734,8 @@ class shopUpdateproductsPluginRunController extends waLongActionController {
         return $in_stock;
     }
 
-    protected function isDebug() {
+    protected function isDebug()
+    {
         return waSystemConfig::isDebug();
     }
 
