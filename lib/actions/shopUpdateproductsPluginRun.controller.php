@@ -514,7 +514,7 @@ class shopUpdateproductsPluginRunController extends waLongActionController
                             if ($replace_search && strpos($value, $replace_search) !== false) {
                                 if (!empty($profile_config['update']['replace_count_infinity'][$replace_id])) {
                                     $value = '';
-                                } elseif (!empty($profile_config['update']['replace_count_replace'][$replace_id])) {
+                                } elseif (isset($profile_config['update']['replace_count_replace'][$replace_id])) {
                                     $value = str_replace($replace_search, $profile_config['update']['replace_count_replace'][$replace_id], $value);
                                 }
                             } elseif (!trim($value) && !empty($profile_config['update']['replace_count_null'][$replace_id])) {
