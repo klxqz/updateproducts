@@ -528,7 +528,7 @@ class shopUpdateproductsPluginRunController extends waLongActionController
                 } elseif ($item['type'] == 'sku') {
                     $update_data[$field] = $value;
                 } elseif ($item['type'] == 'feature') {
-                    $update_data['feature'][$field] = $value;
+                    $update_data['features'][$field] = $value;
                 }
             }
 
